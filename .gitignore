@@ -1,0 +1,28 @@
+# Internal working notes and planning documents — not part of the submission
+docs/_intern/
+docs/**/briefing*
+*.internal.md
+NOTES.md
+TODO.md
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# Secrets and local config
+.env
+.env.*
+!.env.example
+
+# Vector index build artifacts (rebuilt from source, shipped to S3)
+data/chroma/
+*.sqlite3
+
+# Local corpus downloads (fetched by script, not committed)
+data/raw/
+
+# OS
+.DS_Store

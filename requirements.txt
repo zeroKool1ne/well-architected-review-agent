@@ -1,0 +1,19 @@
+# Agents and orchestration
+langchain==0.3.27
+langchain-aws==0.2.31
+langgraph==0.6.8
+langsmith==0.4.41
+
+# Vector store
+chromadb==1.1.1
+
+# API
+fastapi==0.118.0
+mangum==0.19.0
+pydantic==2.11.9
+
+# AWS
+boto3==1.40.47
+
+# Corpus ingestion
+pypdf==6.1.1

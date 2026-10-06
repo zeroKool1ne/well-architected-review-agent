@@ -1,0 +1,6 @@
+-r requirements.txt
+
+pytest==8.4.2
+pytest-cov==7.0.0
+moto[s3,dynamodb,sqs]==5.1.14
+ruff==0.14.0
