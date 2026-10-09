@@ -1,0 +1,99 @@
+{
+  "slug": "02_flawed_webapp",
+  "title": "Web application with known problems",
+  "purpose": "One violation per pillar, each stated on the diagram so a vision model can see it.",
+  "nodes": [
+    {
+      "id": "users",
+      "service": "Users",
+      "label": "Clients"
+    },
+    {
+      "id": "alb",
+      "service": "Application Load Balancer",
+      "label": "Application Load Balancer",
+      "cluster": "eu-central-1a"
+    },
+    {
+      "id": "web",
+      "service": "EC2",
+      "label": "EC2 m5.2xlarge on-demand, running 24/7 ~8% CPU",
+      "cluster": "eu-central-1a"
+    },
+    {
+      "id": "db",
+      "service": "RDS",
+      "label": "RDS PostgreSQL single-AZ, no automated backups",
+      "cluster": "eu-central-1a"
+    },
+    {
+      "id": "assets",
+      "service": "S3",
+      "label": "S3 bucket public read enabled no default encryption"
+    },
+    {
+      "id": "logs",
+      "service": "CloudWatch",
+      "label": "CloudWatch Logs"
+    }
+  ],
+  "edges": [
+    {
+      "from": "users",
+      "to": "alb",
+      "label": "HTTPS"
+    },
+    {
+      "from": "alb",
+      "to": "web",
+      "label": "HTTP"
+    },
+    {
+      "from": "web",
+      "to": "db",
+      "label": "SQL"
+    },
+    {
+      "from": "web",
+      "to": "assets",
+      "label": "read/write"
+    },
+    {
+      "from": "web",
+      "to": "logs",
+      "label": "logs"
+    }
+  ],
+  "expected_findings": [
+    {
+      "pillar": "security",
+      "issue": "S3 bucket allows public read access and has no default encryption",
+      "evidence": [
+        "assets"
+      ]
+    },
+    {
+      "pillar": "reliability",
+      "issue": "Every compute and data component sits in a single availability zone, so the zone is a single point of failure",
+      "evidence": [
+        "alb",
+        "web",
+        "db"
+      ]
+    },
+    {
+      "pillar": "reliability",
+      "issue": "RDS instance has no automated backups, so there is no recovery point",
+      "evidence": [
+        "db"
+      ]
+    },
+    {
+      "pillar": "cost",
+      "issue": "Oversized on-demand instance running continuously at low utilisation",
+      "evidence": [
+        "web"
+      ]
+    }
+  ]
+}

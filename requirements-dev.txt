@@ -4,3 +4,12 @@ pytest==8.4.2
 pytest-cov==7.0.0
 moto[s3,dynamodb,sqs]==5.1.14
 ruff==0.14.0
+
+# Test fixtures: diagrams-as-code gives every generated test case a
+# ground truth, which is what makes extraction accuracy measurable.
+# Needs graphviz on the system (brew install graphviz).
+diagrams==0.24.4
+
+# diagrams pulls packaging>=26, which langchain-core rejects. Pinned below that
+# ceiling; the resulting virtualenv warning concerns a build tool, not runtime.
+packaging<26.0.0
