@@ -1,5 +1,10 @@
-"""Spike: can Bedrock Haiku read an AWS architecture diagram well enough to review it?"""
-import json
+"""Spike: can a Bedrock vision model read an AWS architecture diagram well
+enough to review it?
+
+Runs on Amazon Nova Lite. Anthropic models were the first choice but are
+unavailable in the shared course account, which requires a use-case form to be
+submitted against the account before they can be invoked.
+"""
 import sys
 import time
 
