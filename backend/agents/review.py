@@ -16,7 +16,6 @@ so the specialist reports nothing instead.
 
 from __future__ import annotations
 
-
 from backend.agents.extraction import _items, _parse_json
 from backend.core.aws import converse
 from backend.core.models import Citation, Finding, Graph, Pillar

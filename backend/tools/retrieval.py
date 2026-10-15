@@ -117,7 +117,12 @@ def search_pillars(query: str, pillar: Pillar, limit: int = 4) -> list[Passage]:
             query_embeddings=[vector], n_results=limit, where={"pillar": str(pillar)}
         )
         candidates = list(
-            zip(result["documents"][0], result["distances"][0], result["metadatas"][0])
+            zip(
+                result["documents"][0],
+                result["distances"][0],
+                result["metadatas"][0],
+                strict=False,
+            )
         )
     else:
         vectors, chunks = _array_index()

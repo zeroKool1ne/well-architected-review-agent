@@ -100,7 +100,9 @@ async def extract(file: UploadFile) -> ExtractResponse:
         # The model returned something unparseable. That is a model failure, not
         # a client error, and saying so plainly beats a generic 500.
         log.exception("extraction failed")
-        raise HTTPException(status_code=502, detail=f"Model returned no usable graph: {exc}") from exc
+        raise HTTPException(
+            status_code=502, detail=f"Model returned no usable graph: {exc}"
+        ) from exc
     elapsed = time.perf_counter() - started
 
     review_id = store.new_id()

@@ -41,9 +41,14 @@ STOPWORDS = frozenset(
 
 
 def _topic(finding: Finding) -> frozenset[str]:
-    """The words that carry the meaning of a finding, for comparison."""
+    """The words that carry the meaning of a finding, for comparison.
+
+    Two-character words are kept: "s3", "az" and "ec2" are exactly the tokens
+    that distinguish one finding from another here, and dropping them as noise
+    made two reports about the same bucket look unrelated.
+    """
     words = re.findall(r"[a-z0-9]+", finding.issue.lower())
-    return frozenset(w for w in words if w not in STOPWORDS and len(w) > 2)
+    return frozenset(w for w in words if w not in STOPWORDS and len(w) > 1)
 
 
 def _same_problem(a: Finding, b: Finding) -> bool:

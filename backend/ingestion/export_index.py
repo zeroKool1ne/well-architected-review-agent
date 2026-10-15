@@ -19,7 +19,6 @@ So the index is built with Chroma and deployed as an array:
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 import chromadb
 import numpy as np
@@ -52,7 +51,7 @@ def main() -> int:
         json.dumps(
             [
                 {"text": text, **meta}
-                for text, meta in zip(data["documents"], data["metadatas"])
+                for text, meta in zip(data["documents"], data["metadatas"], strict=False)
             ]
         )
     )

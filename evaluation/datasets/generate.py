@@ -131,8 +131,10 @@ FLAWED = Case(
     nodes=[
         Node("users", "users", "Clients"),
         Node("alb", "alb", "Application Load Balancer", cluster="eu-central-1a"),
-        Node("web", "ec2", "EC2 m5.2xlarge\non-demand, running 24/7\n~8% CPU", cluster="eu-central-1a"),
-        Node("db", "rds", "RDS PostgreSQL\nsingle-AZ, no automated backups", cluster="eu-central-1a"),
+        Node("web", "ec2", "EC2 m5.2xlarge\non-demand, running 24/7\n~8% CPU",
+             cluster="eu-central-1a"),
+        Node("db", "rds", "RDS PostgreSQL\nsingle-AZ, no automated backups",
+             cluster="eu-central-1a"),
         Node("assets", "s3", "S3 bucket\npublic read enabled\nno default encryption"),
         Node("logs", "cloudwatch", "CloudWatch Logs"),
     ],
@@ -151,7 +153,8 @@ FLAWED = Case(
         ),
         Finding(
             pillar="reliability",
-            issue="Every compute and data component sits in a single availability zone, so the zone is a single point of failure",
+            issue="Every compute and data component sits in a single availability"
+                  " zone, so the zone is a single point of failure",
             evidence=["alb", "web", "db"],
         ),
         Finding(

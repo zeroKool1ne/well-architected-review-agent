@@ -1,0 +1,12 @@
+LICENSE
+README.md
+pyproject.toml
+backend/__init__.py
+evaluation/__init__.py
+evaluation/baselines.py
+evaluation/compare.py
+evaluation/run.py
+well_architected_review_agent.egg-info/PKG-INFO
+well_architected_review_agent.egg-info/SOURCES.txt
+well_architected_review_agent.egg-info/dependency_links.txt
+well_architected_review_agent.egg-info/top_level.txt

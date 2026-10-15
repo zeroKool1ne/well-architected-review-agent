@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "well-architected-review-agent"
+version = "1.0.0"
+description = "Reads an AWS architecture diagram and reviews it against the Well-Architected Framework"
+requires-python = ">=3.13"
+license = { file = "LICENSE" }
+
+# Dependencies are pinned in requirements.txt rather than here. The deployed
+# function installs from requirements-lambda.txt, which is a deliberately
+# smaller set, and duplicating either list here would let them drift.
+dependencies = []
+
+[tool.setuptools]
+# Installed editable so `python evaluation/run.py` and `pytest` resolve the
+# package without PYTHONPATH gymnastics.
+packages = ["backend", "evaluation"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

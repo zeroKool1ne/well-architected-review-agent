@@ -20,7 +20,7 @@ import json
 import re
 import sys
 import time
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 import boto3
@@ -186,7 +186,9 @@ def split_best_practices(text: str, prefix: str, start: int = 0) -> list[tuple[s
         body = PAGE_MARKER.sub(" ", text[body_from:body_to])
         body = re.sub(r"[ \t]{2,}", " ", body).strip()
         if body:
-            sections.append((match.group(1), match.group(2).strip(), body, page_at(text, match.start())))
+            sections.append(
+                (match.group(1), match.group(2).strip(), body, page_at(text, match.start()))
+            )
     return sections
 
 
@@ -282,7 +284,10 @@ def build_chunks() -> list[Chunk]:
             for piece in split_by_size(body):
                 chunks.append(Chunk(piece, pillar, bp_id, bp_title, page))
 
-        print(f"  {pillar:<12} {len(sections):>3} best practices -> {len(chunks) - before:>4} chunks")
+        print(
+            f"  {pillar:<12} {len(sections):>3} best practices"
+            f" -> {len(chunks) - before:>4} chunks"
+        )
 
     return chunks
 
