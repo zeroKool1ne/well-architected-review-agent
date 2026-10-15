@@ -167,8 +167,9 @@ def evaluate_extraction(runs: int) -> list[dict]:
         rows.append(
             {
                 "case": case.name,
-                "node_recall": round(statistics.mean(s.node_recall for s in scores), 2),
-                "spurious_nodes": round(statistics.mean(len(s.nodes_spurious) for s in scores), 1),
+                "box_recall": round(statistics.mean(s.box_recall for s in scores), 2),
+                "service_recall": round(statistics.mean(s.service_recall for s in scores), 2),
+                "spurious_boxes": round(statistics.mean(s.boxes_spurious for s in scores), 1),
                 "edge_recall": round(statistics.mean(s.edge_recall for s in scores), 2),
                 "hallucinated_edge_rate": round(
                     statistics.mean(s.hallucinated_edge_rate for s in scores), 2
@@ -176,10 +177,12 @@ def evaluate_extraction(runs: int) -> list[dict]:
                 "seconds": round(statistics.mean(seconds), 1),
             }
         )
-        print(f"  {rows[-1]['case']:<20} "
-              f"nodes {rows[-1]['node_recall']:.0%}  "
-              f"edges {rows[-1]['edge_recall']:.0%}  "
-              f"hallucinated {rows[-1]['hallucinated_edge_rate']:.0%}")
+        row = rows[-1]
+        print(f"  {row['case']:<20} "
+              f"boxes {row['box_recall']:>4.0%}  "
+              f"services {row['service_recall']:>4.0%}  "
+              f"edges {row['edge_recall']:>4.0%}  "
+              f"hallucinated {row['hallucinated_edge_rate']:>4.0%}")
     return rows
 
 

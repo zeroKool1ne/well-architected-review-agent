@@ -1,0 +1,204 @@
+{
+  "review_id": "fc6398b1a9b2",
+  "status": "reviewed",
+  "source": "diagram.png",
+  "graph": {
+    "nodes": [
+      {
+        "id": "goldmlops-daily-diff-check",
+        "service": "Unknown",
+        "label": "goldmlops-daily-diff-check",
+        "group": null
+      },
+      {
+        "id": "goldmlops-daily-ingest",
+        "service": "Unknown",
+        "label": "goldmlops-daily-ingest",
+        "group": null
+      },
+      {
+        "id": "goldmlops-alerts",
+        "service": "Unknown",
+        "label": "goldmlops-alerts",
+        "group": null
+      },
+      {
+        "id": "api",
+        "service": "Unknown",
+        "label": "api",
+        "group": null
+      },
+      {
+        "id": "goldmlopsapi",
+        "service": "Unknown",
+        "label": "goldmlopsapi",
+        "group": null
+      },
+      {
+        "id": "ingest",
+        "service": "Unknown",
+        "label": "ingest",
+        "group": null
+      },
+      {
+        "id": "goldmlops-scheduled",
+        "service": "Unknown",
+        "label": "goldmlops-scheduled",
+        "group": null
+      },
+      {
+        "id": "monitor",
+        "service": "Unknown",
+        "label": "monitor",
+        "group": null
+      },
+      {
+        "id": "data",
+        "service": "Unknown",
+        "label": "data",
+        "group": null
+      },
+      {
+        "id": "goldmlopsapi-2",
+        "service": "Unknown",
+        "label": "goldmlopsapi",
+        "group": null
+      }
+    ],
+    "edges": [
+      {
+        "source": "goldmlops-daily-diff-check",
+        "target": "goldmlops-daily-ingest",
+        "label": null
+      },
+      {
+        "source": "goldmlops-daily-ingest",
+        "target": "api",
+        "label": null
+      },
+      {
+        "source": "goldmlops-daily-ingest",
+        "target": "goldmlops-alerts",
+        "label": null
+      },
+      {
+        "source": "api",
+        "target": "goldmlops-scheduled",
+        "label": null
+      },
+      {
+        "source": "api",
+        "target": "goldmlopsapi",
+        "label": null
+      },
+      {
+        "source": "ingest",
+        "target": "goldmlops-scheduled",
+        "label": null
+      },
+      {
+        "source": "goldmlops-scheduled",
+        "target": "data",
+        "label": null
+      },
+      {
+        "source": "goldmlops-scheduled",
+        "target": "monitor",
+        "label": null
+      },
+      {
+        "source": "monitor",
+        "target": "goldmlopsapi-2",
+        "label": null
+      }
+    ],
+    "unreadable": []
+  },
+  "created_at": 1792077815,
+  "expires_at": 1792164321,
+  "confirmed_at": 1792077843,
+  "findings": [],
+  "rejected": [
+    {
+      "pillar": "security",
+      "issue": "Lack of authentication for network communications between services",
+      "evidence": [
+        "goldmlops-daily-diff-check",
+        "goldmlops-daily-ingest",
+        "api",
+        "ingest",
+        "goldmlops-scheduled",
+        "monitor",
+        "goldmlopsapi-2"
+      ],
+      "recommendation": "Implement mTLS or SigV4 authentication for service-to-service communication",
+      "citation": {
+        "bp_id": "SEC09-BP03",
+        "bp_title": "Authenticate network communications",
+        "page": 174,
+        "pillar": "security"
+      },
+      "severity": "high"
+    },
+    {
+      "pillar": "reliability",
+      "issue": "Single Availability Zone deployment",
+      "evidence": [
+        "goldmlops-daily-diff-check",
+        "goldmlops-daily-ingest",
+        "goldmlops-alerts",
+        "api",
+        "goldmlopsapi",
+        "ingest",
+        "goldmlops-scheduled",
+        "monitor",
+        "data",
+        "goldmlopsapi-2"
+      ],
+      "recommendation": "",
+      "citation": {
+        "bp_id": "REL10-BP01",
+        "bp_title": "Deploy the workload to multiple locations",
+        "page": 176,
+        "pillar": "reliability"
+      },
+      "severity": "high"
+    },
+    {
+      "pillar": "cost",
+      "issue": "Potential cost savings by implementing reserved instances or savings plans for always-on compute services.",
+      "evidence": [
+        "goldmlops-daily-diff-check",
+        "goldmlops-daily-ingest",
+        "api",
+        "ingest",
+        "goldmlops-scheduled",
+        "monitor",
+        "goldmlopsapi-2"
+      ],
+      "recommendation": "Evaluate the usage patterns of these services to determine if reserved instances or savings plans are applicable.",
+      "citation": {
+        "bp_id": "COST07-BP04",
+        "bp_title": "Implement pricing models for all components of this",
+        "page": 115,
+        "pillar": "cost"
+      },
+      "severity": "medium"
+    },
+    {
+      "pillar": "cost",
+      "issue": "Potential cost savings by using shared resources.",
+      "evidence": [
+        "data"
+      ],
+      "recommendation": "Evaluate if the 'data' service can be shared across multiple services to reduce costs.",
+      "citation": {
+        "bp_id": "COST06-BP04",
+        "bp_title": "Consider using shared resources",
+        "page": 100,
+        "pillar": "cost"
+      },
+      "severity": "low"
+    }
+  ]
+}

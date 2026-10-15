@@ -1,0 +1,86 @@
+{
+  "review_id": "4a760c08deb3",
+  "status": "pending",
+  "source": "02_training_path.png",
+  "graph": {
+    "nodes": [
+      {
+        "id": "eventbridge-scheduler",
+        "service": "EventBridge",
+        "label": "EventBridge Scheduler (23:30 UTC, Mon-Fri)",
+        "group": null
+      },
+      {
+        "id": "fetch",
+        "service": "Unknown",
+        "label": "fetch",
+        "group": null
+      },
+      {
+        "id": "s3-raw",
+        "service": "S3",
+        "label": "S3 /raw",
+        "group": null
+      },
+      {
+        "id": "sagemaker-training-job",
+        "service": "SageMaker",
+        "label": "SageMaker Training Job preprocess + features (planned) train Random Forest + evaluate (planned)",
+        "group": null
+      },
+      {
+        "id": "mlflow",
+        "service": "MLflow",
+        "label": "MLflow params, metrics, artifacts (local, ADR-9)",
+        "group": null
+      },
+      {
+        "id": "model-registry",
+        "service": "Unknown",
+        "label": "Model Registry (versioned) (planned)",
+        "group": null
+      },
+      {
+        "id": "approved-model",
+        "service": "Unknown",
+        "label": "approved model -> endpoint update (planned)",
+        "group": null
+      }
+    ],
+    "edges": [
+      {
+        "source": "eventbridge-scheduler",
+        "target": "fetch",
+        "label": null
+      },
+      {
+        "source": "fetch",
+        "target": "s3-raw",
+        "label": null
+      },
+      {
+        "source": "s3-raw",
+        "target": "sagemaker-training-job",
+        "label": null
+      },
+      {
+        "source": "sagemaker-training-job",
+        "target": "mlflow",
+        "label": null
+      },
+      {
+        "source": "mlflow",
+        "target": "model-registry",
+        "label": null
+      },
+      {
+        "source": "model-registry",
+        "target": "approved-model",
+        "label": null
+      }
+    ],
+    "unreadable": []
+  },
+  "created_at": 1792064979,
+  "expires_at": 1792151379
+}

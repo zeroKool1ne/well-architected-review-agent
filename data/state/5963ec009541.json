@@ -1,0 +1,81 @@
+{
+  "review_id": "5963ec009541",
+  "status": "pending",
+  "source": "03_inference_path.png",
+  "graph": {
+    "nodes": [
+      {
+        "id": "client",
+        "service": "Users",
+        "label": "Client",
+        "group": null
+      },
+      {
+        "id": "api-gateway",
+        "service": "API Gateway",
+        "label": "API Gateway POST /predict",
+        "group": null
+      },
+      {
+        "id": "sagemaker-inference",
+        "service": "SageMaker",
+        "label": "SageMaker Serverless Inference (planned)",
+        "group": null
+      },
+      {
+        "id": "lambda-function",
+        "service": "Lambda",
+        "label": "predict validate + build features + run the model",
+        "group": null
+      },
+      {
+        "id": "s3-bucket",
+        "service": "S3",
+        "label": "S3 /models/current model.tar.gz",
+        "group": null
+      },
+      {
+        "id": "cloudwatch",
+        "service": "CloudWatch",
+        "label": "CloudWatch latency, errors, predictions",
+        "group": null
+      },
+      {
+        "id": "prediction",
+        "service": "Unknown",
+        "label": "prediction once per cold start",
+        "group": null
+      }
+    ],
+    "edges": [
+      {
+        "source": "client",
+        "target": "api-gateway",
+        "label": null
+      },
+      {
+        "source": "api-gateway",
+        "target": "lambda-function",
+        "label": "prediction once per cold start"
+      },
+      {
+        "source": "lambda-function",
+        "target": "sagemaker-inference",
+        "label": "predict validate + build features + run the model"
+      },
+      {
+        "source": "lambda-function",
+        "target": "s3-bucket",
+        "label": null
+      },
+      {
+        "source": "lambda-function",
+        "target": "cloudwatch",
+        "label": "latency, errors, predictions"
+      }
+    ],
+    "unreadable": []
+  },
+  "created_at": 1792066286,
+  "expires_at": 1792152686
+}

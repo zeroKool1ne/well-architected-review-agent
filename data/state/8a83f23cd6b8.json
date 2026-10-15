@@ -1,0 +1,217 @@
+{
+  "review_id": "8a83f23cd6b8",
+  "status": "reviewed",
+  "source": "03_inference_path.png",
+  "graph": {
+    "nodes": [
+      {
+        "id": "client",
+        "service": "Users",
+        "label": "Client",
+        "group": null
+      },
+      {
+        "id": "api-gateway",
+        "service": "API Gateway",
+        "label": "API Gateway POST /predict",
+        "group": null
+      },
+      {
+        "id": "sagemaker-inference",
+        "service": "SageMaker",
+        "label": "SageMaker Serverless Inference (planned)",
+        "group": null
+      },
+      {
+        "id": "lambda-function",
+        "service": "Lambda",
+        "label": "predict validate + build features + run the model",
+        "group": null
+      },
+      {
+        "id": "s3-bucket",
+        "service": "S3",
+        "label": "S3 /models/current model.tar.gz",
+        "group": null
+      },
+      {
+        "id": "cloudwatch",
+        "service": "CloudWatch",
+        "label": "CloudWatch latency, errors, predictions",
+        "group": null
+      }
+    ],
+    "edges": [
+      {
+        "source": "api-gateway",
+        "target": "lambda-function",
+        "label": "prediction once per cold start"
+      },
+      {
+        "source": "lambda-function",
+        "target": "sagemaker-inference",
+        "label": "predict validate + build features + run the model"
+      },
+      {
+        "source": "lambda-function",
+        "target": "s3-bucket",
+        "label": null
+      },
+      {
+        "source": "lambda-function",
+        "target": "cloudwatch",
+        "label": "latency, errors, predictions"
+      },
+      {
+        "source": "client",
+        "target": "api-gateway",
+        "label": "POST/predict"
+      }
+    ],
+    "unreadable": []
+  },
+  "created_at": 1792068400,
+  "expires_at": 1792156280,
+  "confirmed_at": 1792069806,
+  "findings": [
+    {
+      "pillar": "security",
+      "issue": "API Gateway is exposed to the public internet without additional authentication or authorization mechanisms.",
+      "evidence": [
+        "api-gateway",
+        "client"
+      ],
+      "recommendation": "Implement an authorizer in API Gateway to authenticate and authorize requests.",
+      "citation": {
+        "bp_id": "SEC09-BP03",
+        "bp_title": "Authenticate network communications",
+        "page": 174,
+        "pillar": "security"
+      },
+      "severity": "high"
+    },
+    {
+      "pillar": "reliability",
+      "issue": "Lambda function is a single point of failure for request validation, feature building, and model invocation.",
+      "evidence": [
+        "lambda-function"
+      ],
+      "recommendation": "",
+      "citation": {
+        "bp_id": "REL02-BP01",
+        "bp_title": "Use highly available network connectivity for your",
+        "page": 46,
+        "pillar": "reliability"
+      },
+      "severity": "high"
+    },
+    {
+      "pillar": "reliability",
+      "issue": "SageMaker Inference is not spread across multiple availability zones for high availability.",
+      "evidence": [
+        "sagemaker-inference"
+      ],
+      "recommendation": "",
+      "citation": {
+        "bp_id": "REL02-BP01",
+        "bp_title": "Use highly available network connectivity for your",
+        "page": 46,
+        "pillar": "reliability"
+      },
+      "severity": "high"
+    },
+    {
+      "pillar": "reliability",
+      "issue": "API Gateway lacks a content delivery network (CDN) for highly available network connectivity.",
+      "evidence": [
+        "api-gateway"
+      ],
+      "recommendation": "Use Amazon CloudFront in front of API Gateway.",
+      "citation": {
+        "bp_id": "REL02-BP01",
+        "bp_title": "Use highly available network connectivity for your",
+        "page": 46,
+        "pillar": "reliability"
+      },
+      "severity": "medium"
+    },
+    {
+      "pillar": "security",
+      "issue": "Lambda function is not deployed in a VPC, which might expose it to the public internet.",
+      "evidence": [
+        "lambda-function"
+      ],
+      "recommendation": "Deploy the Lambda function in a VPC to restrict its network exposure.",
+      "citation": {
+        "bp_id": "SEC05-BP01",
+        "bp_title": "Create network layers",
+        "page": 117,
+        "pillar": "security"
+      },
+      "severity": "medium"
+    },
+    {
+      "pillar": "cost",
+      "issue": "Potential cost savings by using event-driven architecture",
+      "evidence": [
+        "lambda-function",
+        "api-gateway"
+      ],
+      "recommendation": "Implement an event-driven architecture to reduce unnecessary compute usage.",
+      "citation": {
+        "bp_id": "COST05-BP05",
+        "bp_title": "Select components of this workload to optimize cost in",
+        "page": 89,
+        "pillar": "cost"
+      },
+      "severity": "medium"
+    },
+    {
+      "pillar": "cost",
+      "issue": "Potentially high cost due to always-on compute in Lambda function",
+      "evidence": [
+        "lambda-function"
+      ],
+      "recommendation": "Consider using provisioned concurrency for critical paths to reduce cold start latency and cost.",
+      "citation": {
+        "bp_id": "COST05-BP05",
+        "bp_title": "Select components of this workload to optimize cost in",
+        "page": 89,
+        "pillar": "cost"
+      },
+      "severity": "medium"
+    },
+    {
+      "pillar": "security",
+      "issue": "S3 bucket access is not restricted to specific services or VPC endpoints, potentially exposing it to the public internet.",
+      "evidence": [
+        "s3-bucket",
+        "lambda-function"
+      ],
+      "recommendation": "Restrict S3 bucket access to specific services or VPC endpoints using bucket policies and VPC endpoints.",
+      "citation": {
+        "bp_id": "SEC05-BP01",
+        "bp_title": "Create network layers",
+        "page": 117,
+        "pillar": "security"
+      },
+      "severity": "medium"
+    },
+    {
+      "pillar": "reliability",
+      "issue": "S3 bucket is in a single region, which could be a single point of failure.",
+      "evidence": [
+        "s3-bucket"
+      ],
+      "recommendation": "",
+      "citation": {
+        "bp_id": "REL02-BP01",
+        "bp_title": "Use highly available network connectivity for your",
+        "page": 46,
+        "pillar": "reliability"
+      },
+      "severity": "medium"
+    }
+  ],
+  "rejected": []
+}
