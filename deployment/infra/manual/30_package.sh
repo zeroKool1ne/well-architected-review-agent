@@ -46,6 +46,18 @@ cp -R "${ROOT}/backend" "${BUILD}/package/backend"
 mkdir -p "${BUILD}/package/frontend"
 cp "${ROOT}/frontend/index.html" "${BUILD}/package/frontend/index.html"
 
+# The talk ships with the thing it describes, so the demo slide can embed the
+# live tool from the same origin.
+mkdir -p "${BUILD}/package/docs/slides" "${BUILD}/package/evaluation/results"
+cp "${ROOT}/docs/slides/index.html" "${BUILD}/package/docs/slides/" 2>/dev/null || true
+cp -R "${ROOT}/docs/diagrams" "${BUILD}/package/docs/" 2>/dev/null || true
+cp "${ROOT}/evaluation/results/evaluation.json" "${BUILD}/package/evaluation/results/" 2>/dev/null || true
+
+# Only the images from the datasets; the truth files and the generator are not
+# needed at runtime and the png files are what the deck shows.
+mkdir -p "${BUILD}/package/evaluation/datasets"
+(cd "${ROOT}/evaluation/datasets" && find . -name "diagram.png" -exec rsync -R {} "${BUILD}/package/evaluation/datasets/" \;) 2>/dev/null || true
+
 # Ingestion runs on a laptop, not in the function, and importing it would pull
 # in chromadb and pypdf, which are not in the package.
 rm -rf "${BUILD}/package/backend/ingestion"

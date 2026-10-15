@@ -23,6 +23,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from backend.agents.extraction import extract_graph
@@ -42,6 +43,8 @@ app = FastAPI(
 )
 
 FRONTEND = ROOT / "frontend" / "index.html"
+SLIDES = ROOT / "docs" / "slides" / "index.html"
+EVALUATION = ROOT / "evaluation" / "results" / "evaluation.json"
 
 # Bedrock accepts these image formats; anything else is rejected before a call
 # is made rather than failing deep inside the model invocation.
@@ -67,6 +70,27 @@ def index():
     if FRONTEND.exists():
         return FileResponse(FRONTEND)
     return JSONResponse({"service": "well-architected-review-agent", "docs": "/docs"})
+
+
+@app.get("/slides", include_in_schema=False)
+def slides():
+    """The presentation, served from the same origin as the app.
+
+    Same origin is the point: the demo slide embeds the live tool in an iframe,
+    which only works without cross-origin headers if both come from here. It
+    also means the talk is deployed with the thing it describes.
+    """
+    if SLIDES.exists():
+        return FileResponse(SLIDES)
+    raise HTTPException(status_code=404, detail="Slides not bundled in this deployment")
+
+
+@app.get("/evaluation.json", include_in_schema=False)
+def evaluation():
+    """The measured numbers, so the charts in the talk read from the real file."""
+    if EVALUATION.exists():
+        return FileResponse(EVALUATION, media_type="application/json")
+    raise HTTPException(status_code=404, detail="No evaluation results bundled")
 
 
 @app.get("/health")
@@ -178,6 +202,16 @@ def post_review(review_id: str, body: ConfirmRequest) -> ReviewResult:
     )
 
     return result
+
+
+# Images the deck references. Mounted at the paths the slides resolve to, so
+# the same file works locally and deployed without rewriting any src.
+for mount, directory in (
+    ("/evaluation/datasets", ROOT / "evaluation" / "datasets"),
+    ("/docs/diagrams", ROOT / "docs" / "diagrams"),
+):
+    if directory.exists():
+        app.mount(mount, StaticFiles(directory=directory), name=mount.strip("/").replace("/", "-"))
 
 
 # Lambda entry point. Mangum translates the function URL's event into the ASGI

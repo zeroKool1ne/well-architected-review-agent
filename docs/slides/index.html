@@ -4,157 +4,225 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Well-Architected Review Agent — Final Project</title>
+<!--
+  HOW TO EDIT THIS DECK
+
+  Every slide is one <section class="slide"> ... </section>.
+  To drop a slide, delete the whole section. Numbering is automatic.
+  To reorder, move the section. Nothing else references slide numbers.
+
+  Arrow keys or space to advance. Press P for presenter view (notes visible).
+  Cmd-P prints every slide to PDF, one per page — that is the backup.
+
+  The demo slide embeds the live tool in an iframe. It only works when this
+  page is served from the same origin as the app, i.e. /slides on the API,
+  not opened as a local file.
+-->
 <style>
   :root {
-    --bg: #ffffff; --fg: #0f172a; --muted: #64748b; --line: #e2e8f0;
-    --panel: #f8fafc; --accent: #0284c7;
-    --warn-bg: #fef3c7; --warn-line: #f59e0b; --warn-fg: #78350f;
+    --bg: #ffffff; --fg: #111827; --muted: #6b7280; --line: #e5e7eb;
+    --panel: #f9fafb; --accent: #0369a1;
+    --warn-bg: #fffbeb; --warn-line: #f59e0b; --warn-fg: #78350f;
     --bad: #b91c1c; --good: #15803d;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
   body {
-    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
     color: var(--fg); background: var(--panel);
+    -webkit-font-smoothing: antialiased;
   }
-  .deck { height: 100vh; overflow: hidden; }
+
   .slide {
-    display: none; height: 100vh; padding: 56px 64px 72px;
-    background: var(--bg); flex-direction: column;
+    display: none; position: absolute; inset: 0;
+    padding: 4.5vh 5vw 8vh; background: var(--bg);
+    flex-direction: column;
   }
   .slide.active { display: flex; }
-  .slide > .num {
-    position: absolute; bottom: 24px; right: 32px;
-    font-size: 13px; color: var(--muted);
-  }
+
   .kicker {
-    font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
-    color: var(--accent); margin-bottom: 14px;
+    font-size: clamp(11px, 1.05vw, 14px); font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 1.4vh;
   }
-  h1 { font-size: 46px; line-height: 1.1; margin-bottom: 14px; }
-  h2 { font-size: 34px; line-height: 1.15; margin-bottom: 22px; }
-  h3 { font-size: 19px; margin-bottom: 10px; }
-  p { font-size: 20px; margin-bottom: 14px; max-width: 60ch; }
-  p.lead { font-size: 24px; color: var(--muted); }
-  ul { margin: 0 0 16px 22px; }
-  li { font-size: 19px; margin-bottom: 9px; max-width: 58ch; }
+  h1 { font-size: clamp(32px, 4.6vw, 68px); line-height: 1.04; letter-spacing: -.02em; margin-bottom: 2vh; }
+  h2 { font-size: clamp(26px, 3.4vw, 50px); line-height: 1.08; letter-spacing: -.015em; margin-bottom: 2.6vh; }
+  h3 { font-size: clamp(15px, 1.5vw, 21px); margin-bottom: 1vh; }
+  p  { font-size: clamp(15px, 1.5vw, 23px); margin-bottom: 1.6vh; max-width: 56ch; }
+  p.lead { font-size: clamp(18px, 2vw, 30px); color: var(--muted); max-width: 48ch; }
+  ul { margin: 0 0 1.6vh 1.3em; }
+  li { font-size: clamp(14px, 1.45vw, 21px); margin-bottom: .9vh; max-width: 54ch; }
+  strong { font-weight: 700; }
 
-  .cols { display: flex; gap: 36px; align-items: flex-start; flex: 1; }
+  .cols { display: flex; gap: 4vw; align-items: flex-start; flex: 1; min-height: 0; }
   .cols > * { flex: 1; min-width: 0; }
+  .cols.tight { gap: 2.5vw; }
 
-  table { border-collapse: collapse; font-size: 17px; width: 100%; }
-  th { text-align: left; font-size: 12px; letter-spacing: .06em; text-transform: uppercase;
-       color: var(--muted); padding: 0 12px 8px 0; font-weight: 600; }
-  td { padding: 9px 12px 9px 0; border-top: 1px solid var(--line); }
-  td.n { font-variant-numeric: tabular-nums; }
+  table { border-collapse: collapse; font-size: clamp(13px, 1.35vw, 19px); width: 100%; }
+  th { text-align: left; font-size: clamp(10px, 1vw, 13px); letter-spacing: .07em;
+       text-transform: uppercase; color: var(--muted); padding: 0 1em .7em 0; font-weight: 600; }
+  td { padding: .75em 1em .75em 0; border-top: 1px solid var(--line); }
+  td.n { font-variant-numeric: tabular-nums; text-align: right; }
   .bad { color: var(--bad); font-weight: 700; }
   .good { color: var(--good); font-weight: 700; }
 
   pre {
     background: var(--panel); border-left: 3px solid var(--line);
-    padding: 14px 18px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 15px; line-height: 1.5; overflow-x: auto; margin-bottom: 16px;
+    padding: 1.2em 1.4em; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: clamp(12px, 1.2vw, 17px); line-height: 1.55; overflow: auto; margin-bottom: 1.6vh;
   }
   .quote {
     background: var(--warn-bg); border-left: 4px solid var(--warn-line);
-    padding: 18px 22px; font-size: 20px; color: var(--warn-fg); margin-bottom: 18px;
-    max-width: 62ch;
+    padding: 1.1em 1.4em; font-size: clamp(15px, 1.6vw, 24px);
+    color: var(--warn-fg); margin-bottom: 2vh; max-width: 58ch;
   }
   .punch {
-    font-size: 26px; font-weight: 700; line-height: 1.3; max-width: 56ch;
-    margin-top: auto; padding-top: 20px; border-top: 2px solid var(--line);
+    font-size: clamp(18px, 2.1vw, 31px); font-weight: 700; line-height: 1.25;
+    max-width: 52ch; margin-top: auto; padding-top: 2.2vh; border-top: 2px solid var(--line);
   }
-  img { max-width: 100%; max-height: 62vh; object-fit: contain; }
-  .center { justify-content: center; align-items: flex-start; }
-  .hint { font-size: 15px; color: var(--muted); margin-top: 10px; }
+  figure { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; }
+  figure img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+  /* Big single numbers */
+  .stats { display: flex; gap: 3vw; margin: 1vh 0 2vh; }
+  .stat .v { font-size: clamp(34px, 5vw, 76px); font-weight: 800; line-height: 1; letter-spacing: -.03em; }
+  .stat .l { font-size: clamp(12px, 1.2vw, 16px); color: var(--muted); margin-top: .6em; max-width: 18ch; }
+
+  /* Bar charts, drawn from the numbers in evaluation.json */
+  .bars { width: 100%; }
+  .bar-row { display: flex; align-items: center; gap: .9em; margin-bottom: .8em; }
+  .bar-label { flex: 0 0 34%; font-size: clamp(12px, 1.25vw, 17px); text-align: right; color: var(--muted); }
+  .bar-track { flex: 1; height: clamp(16px, 2.2vh, 26px); background: var(--panel); border-radius: 3px; position: relative; }
+  .bar-fill { height: 100%; border-radius: 3px; background: var(--accent); }
+  .bar-fill.warn { background: var(--warn-line); }
+  .bar-fill.bad { background: var(--bad); }
+  .bar-fill.good { background: var(--good); }
+  .bar-value { flex: 0 0 5em; font-size: clamp(12px, 1.3vw, 18px); font-variant-numeric: tabular-nums; font-weight: 700; }
+
+  iframe.demo {
+    flex: 1; width: 100%; border: 1px solid var(--line); border-radius: 8px;
+    background: #fff; min-height: 0;
+  }
+
+  .hint { font-size: clamp(12px, 1.2vw, 16px); color: var(--muted); }
 
   nav {
-    position: fixed; bottom: 20px; left: 32px; display: flex; gap: 8px; align-items: center;
-    font-size: 13px; color: var(--muted);
+    position: fixed; bottom: 1.6vh; left: 2vw; right: 2vw;
+    display: flex; gap: .6em; align-items: center; justify-content: space-between;
+    font-size: 12px; color: var(--muted); pointer-events: none;
   }
+  nav > div { display: flex; gap: .5em; align-items: center; pointer-events: auto; }
   nav button {
-    font: inherit; padding: 5px 11px; border: 1px solid var(--line);
+    font: inherit; padding: .35em .8em; border: 1px solid var(--line);
     background: #fff; border-radius: 6px; cursor: pointer; color: var(--fg);
   }
+  .progress { position: fixed; top: 0; left: 0; height: 3px; background: var(--accent); transition: width .2s; }
+
+  .notes {
+    display: none; position: fixed; bottom: 5vh; left: 5vw; right: 5vw;
+    background: #111827; color: #e5e7eb; padding: 1em 1.3em; border-radius: 8px;
+    font-size: 14px; line-height: 1.5; max-height: 22vh; overflow: auto;
+  }
+  body.presenting .notes.active { display: block; }
+
   @media print {
-    .slide { display: flex !important; page-break-after: always; height: auto; }
-    nav { display: none; }
+    body { background: #fff; }
+    .slide { display: flex !important; position: relative; inset: auto;
+             height: 100vh; page-break-after: always; }
+    nav, .progress, .notes { display: none !important; }
   }
 </style>
 </head>
 <body>
-<div class="deck">
 
-<!-- 1 -->
-<section class="slide active center">
-  <div class="kicker">Ironhack Final Project · GenAI</div>
-  <h1>Well-Architected<br>Review Agent</h1>
-  <p class="lead">An AWS architecture diagram goes in.<br>Findings per pillar come out — once a human has confirmed what the model read.</p>
-  <p class="hint">Multimodal pipeline · supervisor with three specialists · human-in-the-loop · deployed on AWS</p>
+<div class="progress" id="progress"></div>
+
+<!-- ═══════════════════════════════ 1 · TITLE ═══════════════════════════════ -->
+<section class="slide">
+  <div style="margin-top:auto;margin-bottom:auto">
+    <div class="kicker">Ironhack — Final Project · Daniel Vasic · October 2026</div>
+    <h1>Well-Architected<br>Review Agent</h1>
+    <p class="lead">AI analysis of AWS architecture diagrams.</p>
+    <p class="hint" style="margin-top:4vh">
+      Multimodal pipeline &nbsp;|&nbsp; Supervisor with three specialists &nbsp;|&nbsp;
+      Human-in-the-loop &nbsp;|&nbsp; Deployed on AWS
+    </p>
+  </div>
+  <div class="notes">Keep it short. The next slide is the one that sets up everything.</div>
 </section>
 
-<!-- 2 -->
+<!-- ═══════════════════════════════ 2 · PROBLEM ═════════════════════════════ -->
 <section class="slide">
   <div class="kicker">The problem</div>
   <h2>A customer asks: is my architecture sound?</h2>
   <div class="cols">
     <div>
-      <p>Usually one artefact exists. A diagram in a slide deck.</p>
-      <p>No Terraform state. No config export. A picture.</p>
-      <p>Checking it by hand means holding <strong>178 best practices</strong> in your head and comparing them against that picture.</p>
+      <p>Usually one artefact exists.</p>
+      <p><strong>A single picture.</strong></p>
+      <p>Checking it by hand means holding <strong>178 best practices</strong> in your head
+         and comparing them against that picture.</p>
     </div>
     <div>
-      <pre>AWS Well-Architected Framework
-
-Security          63 best practices
-Cost Optimization 50
-Reliability       65
-                 ───
-                 178   across 669 pages</pre>
-      <p class="hint">It takes days. So it rarely happens.</p>
+      <table>
+        <tr><th></th><th style="text-align:right">Best practices</th></tr>
+        <tr><td>Security</td><td class="n">63</td></tr>
+        <tr><td>Cost Optimisation</td><td class="n">50</td></tr>
+        <tr><td>Reliability</td><td class="n">65</td></tr>
+        <tr><td><strong>Total</strong></td><td class="n"><strong>178</strong></td></tr>
+      </table>
+      <p class="hint" style="margin-top:1.5vh">669 pages of AWS whitepapers.</p>
     </div>
   </div>
-  <div class="punch">We automate the first pass — and are explicit about the one step a model cannot be trusted with.</div>
+  <div class="punch">We automate the first pass — and are explicit about the one step
+    the model can't be trusted with.</div>
+  <div class="notes">The last line is the thesis of the whole talk. Say it slowly.</div>
 </section>
 
-<!-- 3 -->
+<!-- ═══════════════════════════════ 3 · WHAT IT DOES ════════════════════════ -->
 <section class="slide">
   <div class="kicker">What it does</div>
-  <h2>Two AI phases, one human gate</h2>
-  <img src="../diagrams/01_architecture_overview.svg" alt="Architecture overview">
+  <h2>Two AI phases, one human gate.</h2>
+  <p class="lead">An architecture diagram goes in, pillar findings come out —
+    with a human confirmation in the middle.</p>
+  <pre style="margin-top:3vh">PHASE 1 — EXTRACT (AI)        HUMAN GATE        PHASE 2 — REVIEW (AI)
+
+  Upload → Extraction Agent → Human confirms → Pillar Agents ×3 → Findings</pre>
+  <div class="punch">Every finding cites a best practice and a page number you can look up.</div>
+  <div class="notes">Don't explain the services yet. That comes after the measurements.</div>
 </section>
 
-<!-- 4 -->
+<!-- ═══════════════════════════════ 4 · MEASUREMENT 1 ═══════════════════════ -->
 <section class="slide">
-  <div class="kicker">Measurement 1 · before any code was written</div>
-  <h2>The vision model invents connections</h2>
+  <div class="kicker">Measurement 1 — before any code was written</div>
+  <h2>The vision model invents connections.</h2>
   <div class="cols">
     <div>
       <table>
         <tr><th>What</th><th>Result</th></tr>
         <tr><td>Box labels (OCR)</td><td class="good">all 21 correct</td></tr>
         <tr><td>Connections</td><td class="bad">invented</td></tr>
-        <tr><td>Self-reported confidence</td><td class="bad">0.95 throughout</td></tr>
+        <tr><td>Self-reported confidence</td><td class="bad">0.95 everywhere</td></tr>
       </table>
-      <p class="hint" style="margin-top:16px">One real diagram, 1924×1959 px, temperature 0.</p>
+      <p class="hint" style="margin-top:2vh">One real diagram, 1924×1959 px, temperature 0.</p>
     </div>
     <div>
       <p>It chained the boxes into a sequence that is not in the picture.</p>
-      <p>And reported <strong>95% confidence</strong> while doing it.</p>
-      <div class="quote">Reliable at reading text. Unreliable at reading structure. Unable to tell the two apart.</div>
+      <div class="quote">Reliable at reading text. Unreliable at reading structure.
+        Unable to tell the two apart.</div>
     </div>
   </div>
   <div class="punch">A pipeline that trusts this graph reviews an architecture that does not exist.</div>
+  <div class="notes">This spike is why the project looks the way it does. It happened on day one.</div>
 </section>
 
-<!-- 5 -->
+<!-- ═══════════════════════════════ 5 · CONSEQUENCE 1 ═══════════════════════ -->
 <section class="slide">
   <div class="kicker">Consequence 1</div>
-  <h2>The human sits where the model is weak</h2>
+  <h2>The human sits where the model is weak.</h2>
   <div class="cols">
     <div>
       <pre>Upload
   ↓
-Extraction        boxes, then arrows
+Extraction        boxes first, then arrows
   ↓
 HUMAN CONFIRMS    corrects the graph
   ↓
@@ -162,27 +230,32 @@ Review            runs on the confirmed graph</pre>
       <p>Not a rubber stamp at the end. A gate at the one measurably weak step.</p>
     </div>
     <div>
-      <h3>Two passes, not one</h3>
-      <p>Asking for boxes and arrows together let the easy task carry the hard one.</p>
+      <h3>Splitting extraction in two helped</h3>
+      <p class="hint">Asking for boxes and arrows together let the easy task carry the hard one.</p>
       <table>
-        <tr><th>Case</th><th>Nodes</th><th>Edges</th><th>Invented</th></tr>
+        <tr><th>Case</th><th style="text-align:right">Boxes</th><th style="text-align:right">Edges</th><th style="text-align:right">Invented</th></tr>
         <tr><td>simple</td><td class="n good">100%</td><td class="n good">100%</td><td class="n good">0%</td></tr>
-        <tr><td>complex</td><td class="n good">100%</td><td class="n">66%</td><td class="n bad">48%</td></tr>
+        <tr><td>complex</td><td class="n good">100%</td><td class="n">60%</td><td class="n bad">50%</td></tr>
       </table>
-      <p class="hint" style="margin-top:14px">Better. Not fixed. Hence the gate.</p>
+      <p class="hint" style="margin-top:1.5vh">Better. Not fixed. Hence the gate.</p>
     </div>
   </div>
+  <div class="notes">"Better, not fixed" is the honest version. Don't oversell the two-pass fix.</div>
 </section>
 
-<!-- 6 -->
+<!-- ═══════════════════════════════ 6 · MEASUREMENT 2 ═══════════════════════ -->
 <section class="slide">
-  <div class="kicker">Measurement 2 · the one that changed the design</div>
-  <h2>Telling a model not to hallucinate does not work</h2>
-  <div class="quote">“Never write that something is missing, disabled or unencrypted because the diagram is silent about it.”<br>
-  <span style="font-size:15px">— in the system prompt, verbatim</span></div>
+  <div class="kicker">Measurement 2 — the one that changed the design</div>
+  <h2>Telling a model not to hallucinate does not work.</h2>
+  <div class="quote">
+    "Never write that something is missing, disabled or unencrypted because the
+    diagram is silent about it."
+    <div class="hint" style="margin-top:.6em;color:inherit;opacity:.75">— in the system prompt, verbatim</div>
+  </div>
   <div class="cols">
     <div>
-      <p>With that instruction in place, the deliberately <strong>flawless</strong> test diagram still drew findings about:</p>
+      <p>With that instruction in place, the deliberately <strong>flawless</strong>
+         test diagram still drew findings about:</p>
       <ul>
         <li>missing mTLS</li>
         <li>a single availability zone — on a diagram that names no zone</li>
@@ -191,44 +264,57 @@ Review            runs on the confirmed graph</pre>
     </div>
     <div>
       <p>Strengthening the wording made it <strong>worse</strong>.</p>
-      <p class="hint">5 findings on a diagram whose correct answer is zero.</p>
+      <div class="stats"><div class="stat">
+        <div class="v bad">5</div>
+        <div class="l">findings on a diagram whose correct answer is zero</div>
+      </div></div>
     </div>
   </div>
-  <div class="punch">A model that wants to be useful will find something. Instruction competes with that pull — and loses.</div>
+  <div class="punch">A model that wants to be useful will find something.
+    Instruction competes with that pull — and loses.</div>
+  <div class="notes">This is the most quotable slide. Pause after the punch line.</div>
 </section>
 
-<!-- 7 -->
+<!-- ═══════════════════════════════ 7 · CONSEQUENCE 2 ═══════════════════════ -->
 <section class="slide">
   <div class="kicker">Consequence 2</div>
-  <h2>Remove the incentive, not the permission</h2>
+  <h2>Remove the incentive, not the permission.</h2>
   <div class="cols">
     <div>
-      <pre>Specialist         proposes findings
-     ↓
-Verifier           can only judge
-                   cannot propose
-     ↓
-Supported?  keep ──→ report
-Unsupported ──────→ drop</pre>
-      <p>A separate call that receives the graph and the claims, and returns keep or drop.</p>
+      <pre>Specialist      proposes findings
+    ↓
+Verifier        can only judge
+                cannot propose
+    ↓
+supported  →  keep
+unsupported →  drop</pre>
+      <p>A separate call that receives the graph and the claims,
+         and returns keep or drop. Nothing else.</p>
     </div>
     <div>
-      <h3>Clean diagram · correct answer: 0</h3>
-      <table>
-        <tr><th></th><th>Findings</th></tr>
-        <tr><td>without verifier</td><td class="n bad">5.6</td></tr>
-        <tr><td>with verifier</td><td class="n good">2.0</td></tr>
-      </table>
-      <p style="margin-top:18px">Recall on the flawed diagram is unchanged: 3.4 of 4 either way.</p>
-      <p class="hint">Precision bought without paying recall. 1.8 s and $0.00008.</p>
+      <h3>False positives on clean diagrams</h3>
+      <div class="bars" style="margin-top:2vh">
+        <div class="bar-row">
+          <div class="bar-label">without verifier</div>
+          <div class="bar-track"><div class="bar-fill bad" style="width:78%"></div></div>
+          <div class="bar-value bad">5.0</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">with verifier</div>
+          <div class="bar-track"><div class="bar-fill good" style="width:19%"></div></div>
+          <div class="bar-value good">1.2</div>
+        </div>
+      </div>
+      <p class="hint" style="margin-top:2vh">Costs 1.5 s and $0.00008 per review.</p>
     </div>
   </div>
+  <div class="notes">If asked: yes, it also rejects a real finding sometimes. 3.0 of 4 instead of 3.4. Slide 13 covers it.</div>
 </section>
 
-<!-- 8 -->
+<!-- ═══════════════════════════════ 8 · MEASUREMENT 3 ═══════════════════════ -->
 <section class="slide">
   <div class="kicker">Measurement 3</div>
-  <h2>One search reaches one pillar and stops</h2>
+  <h2>One search reaches one pillar and stops.</h2>
   <pre>"the workload is deployed across multiple availability zones"
   unfiltered →  reliability, 3 of 3
                 the cost of cross-zone traffic never appears
@@ -236,125 +322,277 @@ Unsupported ──────→ drop</pre>
 "backups of the database"
   unfiltered →  reliability, 3 of 3
                 whether they are encrypted is never asked</pre>
-  <div class="punch">Filtering per pillar does not produce better passages.<br>It forces a perspective that would otherwise never be taken.</div>
+  <div class="punch">Filtering per pillar does not produce better passages.
+    It forces a perspective that would otherwise never be taken.</div>
+  <div class="notes">This is why three specialists instead of one generalist. The numbers are on slide 12.</div>
 </section>
 
-<!-- 9 -->
+<!-- ═══════════════════════════════ 9 · TOPOLOGY ════════════════════════════ -->
 <section class="slide">
   <div class="kicker">Consequence 3</div>
-  <h2>Three specialists, one factory</h2>
-  <img src="../diagrams/02_agent_topology.svg" alt="Agent topology">
+  <h2>Three specialists, one factory.</h2>
+  <div class="cols tight">
+    <div>
+      <h3>Security</h3>
+      <p class="hint">Public buckets, IAM scope, encryption, secrets handling</p>
+    </div>
+    <div>
+      <h3>Cost Optimisation</h3>
+      <p class="hint">Always-on compute, oversized storage tiers, idle resources</p>
+    </div>
+    <div>
+      <h3>Reliability</h3>
+      <p class="hint">Single points of failure, retries, decoupling, backups</p>
+    </div>
+  </div>
+  <pre style="margin-top:1vh">search_pillars(pillar="security")   ← same code
+search_pillars(pillar="cost")       ← different system prompt
+search_pillars(pillar="reliability")← different metadata filter</pre>
+  <p>They run in parallel. A supervisor merges, deduplicates and ranks what comes back.</p>
+  <div class="punch">Routing is code, not a model. Models judge. Code decides what runs.</div>
+  <div class="notes">If asked why not an LLM router: a reviewer that sometimes forgets a pillar is worse than one that always runs all three.</div>
 </section>
 
-<!-- 10 -->
-<section class="slide">
-  <div class="kicker">Evaluation · means over 7 runs</div>
-  <h2>Each baseline removes exactly one decision</h2>
-  <table>
-    <tr><th>Configuration</th><th>Found</th><th>Of 4 planted</th><th>False positives</th><th>Latency</th><th>Cost</th></tr>
-    <tr><td>B1 — specialists, no verification</td><td class="n">7.0</td><td class="n">3.4 / 4</td><td class="n bad">3.6</td><td class="n">2.0 s</td><td class="n">$0.00047</td></tr>
-    <tr><td>B2 — one generalist, verified</td><td class="n">3.0</td><td class="n bad">2.1 / 4</td><td class="n">0.9</td><td class="n bad">4.6 s</td><td class="n">$0.00043</td></tr>
-    <tr><td><strong>Full pipeline</strong></td><td class="n">4.4</td><td class="n good">3.4 / 4</td><td class="n good">1.0</td><td class="n good">3.8 s</td><td class="n">$0.00055</td></tr>
-  </table>
-  <div class="cols" style="margin-top:28px">
-    <div>
-      <h3>The generalist misses problems</h3>
-      <p class="hint">2.1 of 4 against 3.4 — 60% more recall, and faster, because three specialists run in parallel.</p>
-    </div>
-    <div>
-      <h3>Verification is nearly free</h3>
-      <p class="hint">+1.8 s, +$0.00008. Same recall, false positives 3.6 → 1.0.</p>
-    </div>
+<!-- ═══════════════════════════════ 10 · DEMO ═══════════════════════════════ -->
+<section class="slide" data-demo>
+  <div class="kicker">Demo — running live on AWS</div>
+  <h2 style="margin-bottom:1.4vh">Let's run it.</h2>
+  <iframe class="demo" src="/" title="Well-Architected Review Agent"></iframe>
+  <div class="notes">
+    Upload evaluation/datasets/02_flawed_webapp/diagram.png. Point at an invented edge
+    before removing it — that is the moment the whole talk is built on. Then confirm and
+    let the three specialists run.
   </div>
 </section>
 
-<!-- 11 -->
+<!-- ═══════════════════════════════ 11 · ARCHITECTURE ═══════════════════════ -->
 <section class="slide">
-  <div class="kicker">On AWS</div>
-  <h2>What it runs on, and what it costs</h2>
+  <div class="kicker">What it runs on</div>
+  <h2>Serverless, and nothing runs at idle.</h2>
   <div class="cols">
     <div>
       <table>
         <tr><th>Service</th><th>Why</th></tr>
-        <tr><td>Bedrock, Nova Lite</td><td>IAM role, no API key anywhere</td></tr>
-        <tr><td>Lambda, arm64</td><td>nothing runs at idle</td></tr>
-        <tr><td>API Gateway</td><td>function URLs blocked in this account</td></tr>
-        <tr><td>DynamoDB</td><td>state across the gate, TTL 24 h</td></tr>
-        <tr><td>S3</td><td>index + uploads, no public access</td></tr>
+        <tr><td><strong>Bedrock</strong> — Nova Lite</td><td>IAM role, no API key anywhere</td></tr>
+        <tr><td><strong>Lambda</strong> — arm64</td><td>nothing runs at idle</td></tr>
+        <tr><td><strong>API Gateway</strong></td><td>function URLs blocked in this account</td></tr>
+        <tr><td><strong>DynamoDB</strong></td><td>state across the gate, TTL 24 h</td></tr>
+        <tr><td><strong>S3</strong></td><td>index and uploads, no public access</td></tr>
       </table>
     </div>
     <div>
       <h3>Trade-offs taken knowingly</h3>
       <ul>
-        <li><strong>numpy, not chromadb at runtime</strong> — 82 MB of ONNX runtime for an embedding model never called. Identical results, verified.</li>
-        <li><strong>zip, not a container</strong> — 60 MB fits, no registry, no image pull.</li>
+        <li><strong>numpy, not chromadb at runtime</strong> — 82 MB of ONNX runtime for an embedding model never called. Identical results, verified both ways.</li>
+        <li><strong>zip, not a container</strong> — 60 MB fits Lambda's limit, no registry, no image pull.</li>
         <li><strong>Three pillars, not six</strong> — the factory scales; ground truth exists for three.</li>
       </ul>
-      <p class="hint">≈ $0.0005 per review · 2,000 reviews per dollar</p>
+      <div class="stats" style="margin-top:1vh">
+        <div class="stat"><div class="v">$0.0005</div><div class="l">per review — counted, not estimated</div></div>
+      </div>
     </div>
   </div>
+  <div class="notes">The function URL story is a good one if there is time: correct policy, AuthType NONE, still 403. Direct invoke returns 200.</div>
 </section>
 
-<!-- 12 -->
+<!-- ═══════════════════════════════ 12 · EVALUATION ═════════════════════════ -->
+<section class="slide">
+  <div class="kicker">Evaluation — means over 5 runs, three test cases</div>
+  <h2>Each baseline removes exactly one decision.</h2>
+  <div class="cols">
+    <div>
+      <h3>Of the 4 planted problems, how many found</h3>
+      <div class="bars" style="margin-top:1.5vh">
+        <div class="bar-row">
+          <div class="bar-label">B1 — no verification</div>
+          <div class="bar-track"><div class="bar-fill" style="width:85%"></div></div>
+          <div class="bar-value">3.4</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">B2 — one generalist</div>
+          <div class="bar-track"><div class="bar-fill warn" style="width:55%"></div></div>
+          <div class="bar-value">2.2</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">full pipeline</div>
+          <div class="bar-track"><div class="bar-fill good" style="width:75%"></div></div>
+          <div class="bar-value good">3.0</div>
+        </div>
+      </div>
+      <p class="hint" style="margin-top:1.5vh">The specialists find 36% more than a generalist.</p>
+    </div>
+    <div>
+      <h3>False positives where the answer is zero</h3>
+      <div class="bars" style="margin-top:1.5vh">
+        <div class="bar-row">
+          <div class="bar-label">B1 — no verification</div>
+          <div class="bar-track"><div class="bar-fill bad" style="width:89%"></div></div>
+          <div class="bar-value bad">5.7</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">B2 — one generalist</div>
+          <div class="bar-track"><div class="bar-fill good" style="width:8%"></div></div>
+          <div class="bar-value good">0.5</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">full pipeline</div>
+          <div class="bar-track"><div class="bar-fill warn" style="width:31%"></div></div>
+          <div class="bar-value">2.0</div>
+        </div>
+      </div>
+      <p class="hint" style="margin-top:1.5vh">Three reviewers looking for faults find more imaginary ones than one does.</p>
+    </div>
+  </div>
+  <div class="punch">The fan-out is a trade, not a win — and the trade is worth it on architectures that have problems.</div>
+  <div class="notes">Numbers come from evaluation/results/evaluation.json in the repo. Offer to show it.</div>
+</section>
+
+<!-- ═══════════════════════════════ 13 · THE LIMIT ══════════════════════════ -->
+<section class="slide">
+  <div class="kicker">The limit — found two days ago</div>
+  <h2>Isometric diagrams break it completely.</h2>
+  <div class="cols">
+    <div>
+      <figure><img src="../../evaluation/datasets/03_arcentry_3d/diagram.png" alt="Isometric diagram"></figure>
+    </div>
+    <div>
+      <p class="hint">Exported from Arcentry, generated from this project's own Terraform plan.
+         The ground truth comes from infrastructure code.</p>
+      <div class="bars" style="margin-top:2vh">
+        <div class="bar-row">
+          <div class="bar-label">boxes found</div>
+          <div class="bar-track"><div class="bar-fill good" style="width:100%"></div></div>
+          <div class="bar-value good">100%</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">services named</div>
+          <div class="bar-track"><div class="bar-fill bad" style="width:1%"></div></div>
+          <div class="bar-value bad">0%</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">edges invented</div>
+          <div class="bar-track"><div class="bar-fill bad" style="width:98%"></div></div>
+          <div class="bar-value bad">98%</div>
+        </div>
+      </div>
+      <p style="margin-top:2vh">The labels degrade too:
+         <code>drift-check</code> read as <code>diff-check</code>.</p>
+    </div>
+  </div>
+  <div class="punch">It is an excellent reader of horizontal text and a poor reader of pictures.
+    Once the text stops being horizontal, the reading goes too.</div>
+  <div class="notes">This is the honest answer to "does it work on real customer diagrams". It depends on the style, and here is the measurement.</div>
+</section>
+
+<!-- ═══════════════════════════════ 14 · FAIL-SAFE ══════════════════════════ -->
+<section class="slide">
+  <div class="kicker">What happened next is the point</div>
+  <h2>Extraction collapsed. The review said nothing.</h2>
+  <div class="cols">
+    <div>
+      <pre>Extraction   0% services, 98% edges invented
+    ↓
+Review       4 findings proposed
+    ↓
+Verifier     4 rejected
+    ↓
+Output       "No findings"</pre>
+    </div>
+    <div>
+      <p>All four were inferences from silence:</p>
+      <ul>
+        <li>"Lack of authentication"</li>
+        <li>"Single Availability Zone deployment"</li>
+        <li>two × "Potential cost savings…"</li>
+      </ul>
+      <p class="hint">None of it is in the diagram.</p>
+    </div>
+  </div>
+  <div class="punch">The parts fail independently.
+    The system becomes useless before it becomes wrong.</div>
+  <div class="notes">If you only land one point in the whole talk, land this one.</div>
+</section>
+
+<!-- ═══════════════════════════════ 15 · HONESTY ════════════════════════════ -->
 <section class="slide">
   <div class="kicker">Honestly</div>
-  <h2>What is still wrong</h2>
+  <h2>What is still wrong.</h2>
   <div class="cols">
     <div>
       <ul>
-        <li>The clean diagram still draws about two false positives per run — and a single generalist draws fewer. That is what the fan-out costs.</li>
-        <li>Pillar attribution drifts — missing backups are sometimes filed under cost.</li>
-        <li>Results vary between runs despite temperature 0. Every number here is a mean for that reason.</li>
-        <li>Generated test diagrams all look alike; hand-drawn ones are not represented.</li>
+        <li>Clean diagrams still draw one to three false positives per run.</li>
+        <li>Verification sometimes rejects a <em>real</em> finding — 3.0 of 4 instead of 3.4.</li>
+        <li>Pillar attribution drifts: missing backups are sometimes filed under cost.</li>
+        <li>Results vary between runs despite temperature 0. Every number here is a mean.</li>
       </ul>
     </div>
     <div>
       <h3>Next</h3>
       <ul>
-        <li>Pillar attribution checked the same way findings are — structurally, not by instruction.</li>
-        <li>More test cases, including messy real diagrams.</li>
-        <li>The corrected graphs are the start of an evaluation set that grows by being used.</li>
+        <li>Check pillar attribution the way findings are checked — structurally, not by instruction.</li>
+        <li>Messy, hand-drawn diagrams in the test set.</li>
+        <li>Corrected graphs are the start of an evaluation set that grows by being used.</li>
       </ul>
     </div>
   </div>
-  <div class="punch">The gate is not a limitation to engineer away. It is where the system earns trust.</div>
+  <div class="punch">The gate is not a limitation to engineer away.
+    It is where the system earns trust.</div>
+  <div class="notes">Ending on limitations is deliberate. It is what makes the rest believable.</div>
 </section>
 
-<!-- 13 -->
-<section class="slide center">
-  <div class="kicker">Demo</div>
-  <h1>Let's run it.</h1>
-  <p class="lead">Upload a diagram · correct what the model misread · see the findings with their sources</p>
-  <p class="hint">Each finding cites a best practice id and a page you can look up in the actual AWS document.</p>
+<!-- ═══════════════════════════════ 16 · CLOSE ══════════════════════════════ -->
+<section class="slide">
+  <div style="margin-top:auto;margin-bottom:auto">
+    <div class="kicker">Thank you</div>
+    <h1>Questions?</h1>
+    <p class="lead" style="margin-top:2vh">github.com/zeroKool1ne/well-architected-review-agent</p>
+    <p class="hint" style="margin-top:3vh">
+      41 tests · 3 test cases with ground truth · every number in
+      <code>evaluation/results/evaluation.json</code>
+    </p>
+  </div>
+  <div class="notes">Likely questions: why not read the Terraform (customers don't have it) · why Nova (Anthropic blocked in the course account) · why three pillars (factory scales, ground truth for three).</div>
 </section>
-
-</div>
 
 <nav>
-  <button id="prev">←</button>
-  <button id="next">→</button>
-  <span id="pos"></span>
+  <div>
+    <button id="prev">←</button>
+    <button id="next">→</button>
+    <span id="pos"></span>
+  </div>
+  <div><span class="hint">P — notes · Cmd-P — print to PDF</span></div>
 </nav>
 
 <script>
 const slides = [...document.querySelectorAll('.slide')];
-let i = 0;
+let current = 0;
 
 function show(n) {
-  i = Math.max(0, Math.min(slides.length - 1, n));
-  slides.forEach((s, k) => s.classList.toggle('active', k === i));
-  document.getElementById('pos').textContent = `${i + 1} / ${slides.length}`;
-  location.hash = i + 1;
+  current = Math.max(0, Math.min(slides.length - 1, n));
+  slides.forEach((slide, i) => {
+    const active = i === current;
+    slide.classList.toggle('active', active);
+    const notes = slide.querySelector('.notes');
+    if (notes) notes.classList.toggle('active', active);
+  });
+  document.getElementById('pos').textContent = `${current + 1} / ${slides.length}`;
+  document.getElementById('progress').style.width =
+    `${((current + 1) / slides.length) * 100}%`;
+  history.replaceState(null, '', `#${current + 1}`);
 }
 
-document.getElementById('next').onclick = () => show(i + 1);
-document.getElementById('prev').onclick = () => show(i - 1);
+document.getElementById('next').onclick = () => show(current + 1);
+document.getElementById('prev').onclick = () => show(current - 1);
 
 document.addEventListener('keydown', (e) => {
-  if (['ArrowRight', ' ', 'PageDown'].includes(e.key)) { e.preventDefault(); show(i + 1); }
-  if (['ArrowLeft', 'PageUp'].includes(e.key)) { e.preventDefault(); show(i - 1); }
-  if (e.key === 'Home') show(0);
-  if (e.key === 'End') show(slides.length - 1);
+  // Don't steal keys from the embedded demo.
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+  if (['ArrowRight', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); show(current + 1); }
+  else if (['ArrowLeft', 'PageUp'].includes(e.key)) { e.preventDefault(); show(current - 1); }
+  else if (e.key === 'Home') show(0);
+  else if (e.key === 'End') show(slides.length - 1);
+  else if (e.key.toLowerCase() === 'p') document.body.classList.toggle('presenting');
 });
 
 show(parseInt(location.hash.slice(1), 10) - 1 || 0);
