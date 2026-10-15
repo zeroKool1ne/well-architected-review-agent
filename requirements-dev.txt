@@ -1,5 +1,8 @@
 -r requirements.txt
 
+# Local server; on Lambda the app runs through Mangum instead.
+uvicorn[standard]==0.37.0
+
 pytest==8.4.2
 pytest-cov==7.0.0
 moto[s3,dynamodb,sqs]==5.1.14

@@ -42,9 +42,17 @@ supports it.
 
 {claims}
 
-Supported means the description states the fact the claim rests on. "The label \
-says single-AZ" supports a claim about a single availability zone. "The label \
-says public read enabled" supports a claim about public access.
+Supported means the fact the claim rests on appears in the description. A claim \
+that restates a label, or draws the obvious conclusion from one, is supported:
+
+- label "single-AZ" supports a claim about one availability zone
+- label "public read enabled" supports a claim about public access
+- label "no automated backups" supports a claim about missing backups
+- label "running 24/7, ~8% CPU" supports a claim about an idle or oversized \
+instance, because that is what those numbers mean
+
+Judge the fact, not the wording. The reviewer may use different words than the \
+label as long as the label is what makes the claim true.
 
 Unsupported means the claim fills in something the description does not say. \
 If the description never mentions encryption, a claim that traffic is \
