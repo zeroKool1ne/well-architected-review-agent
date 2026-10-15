@@ -7,15 +7,15 @@
       "spurious_nodes": 0,
       "edge_recall": 1.0,
       "hallucinated_edge_rate": 0.0,
-      "seconds": 3.2
+      "seconds": 3.0
     },
     {
       "case": "02_flawed_webapp",
       "node_recall": 1.0,
       "spurious_nodes": 1,
-      "edge_recall": 0.73,
-      "hallucinated_edge_rate": 0.42,
-      "seconds": 4.0
+      "edge_recall": 0.6,
+      "hallucinated_edge_rate": 0.5,
+      "seconds": 3.9
     }
   ],
   "review": [
@@ -29,79 +29,79 @@
       "recall": 1.0,
       "precision": 0.0,
       "pillars_covered": 3,
-      "seconds": 1.9,
+      "seconds": 3.3,
       "usd_per_review": 0.0004,
-      "tokens": 5416
+      "tokens": 5423
     },
     {
       "case": "01_simple_api",
       "configuration": "B2 \u2014 one generalist, verified",
-      "findings": 0.7,
-      "findings_range": "0\u20131",
+      "findings": 0,
+      "findings_range": "0\u20130",
       "matched": 0,
-      "false_positives": 0.7,
+      "false_positives": 0,
       "recall": 1.0,
-      "precision": 0.33,
-      "pillars_covered": 0.7,
-      "seconds": 3.7,
+      "precision": 1.0,
+      "pillars_covered": 0,
+      "seconds": 3.3,
       "usd_per_review": 0.00038,
-      "tokens": 4487
+      "tokens": 4483
     },
     {
       "case": "01_simple_api",
       "configuration": "Full \u2014 specialists, verified",
-      "findings": 1.3,
-      "findings_range": "1\u20132",
+      "findings": 1,
+      "findings_range": "0\u20132",
       "matched": 0,
-      "false_positives": 1.3,
+      "false_positives": 1,
       "recall": 1.0,
-      "precision": 0.0,
+      "precision": 0.33,
       "pillars_covered": 1,
-      "seconds": 2.8,
-      "usd_per_review": 0.00049,
-      "tokens": 6206
+      "seconds": 3.0,
+      "usd_per_review": 0.0005,
+      "tokens": 6211
     },
     {
       "case": "02_flawed_webapp",
       "configuration": "B1 \u2014 specialists, no verification",
-      "findings": 7,
-      "findings_range": "6\u20138",
-      "matched": 4,
-      "false_positives": 3,
-      "recall": 1.0,
-      "precision": 0.58,
-      "pillars_covered": 3,
-      "seconds": 1.7,
+      "findings": 5.7,
+      "findings_range": "4\u20137",
+      "matched": 3.7,
+      "false_positives": 2,
+      "recall": 0.92,
+      "precision": 0.66,
+      "pillars_covered": 2.7,
+      "seconds": 1.8,
       "usd_per_review": 0.00045,
-      "tokens": 5741
+      "tokens": 5728
     },
     {
       "case": "02_flawed_webapp",
       "configuration": "B2 \u2014 one generalist, verified",
-      "findings": 3.3,
-      "findings_range": "3\u20134",
-      "matched": 3,
-      "false_positives": 0.3,
-      "recall": 0.75,
-      "precision": 0.92,
+      "findings": 3,
+      "findings_range": "3\u20133",
+      "matched": 2,
+      "false_positives": 1,
+      "recall": 0.5,
+      "precision": 0.67,
       "pillars_covered": 3,
-      "seconds": 4.5,
-      "usd_per_review": 0.00047,
-      "tokens": 4810
+      "seconds": 4.2,
+      "usd_per_review": 0.00044,
+      "tokens": 4669
     },
     {
       "case": "02_flawed_webapp",
       "configuration": "Full \u2014 specialists, verified",
-      "findings": 6,
-      "findings_range": "5\u20137",
-      "matched": 4,
-      "false_positives": 2,
-      "recall": 1.0,
-      "precision": 0.68,
+      "findings": 5,
+      "findings_range": "5\u20135",
+      "matched": 3.3,
+      "false_positives": 1.7,
+      "recall": 0.83,
+      "precision": 0.67,
       "pillars_covered": 3,
-      "seconds": 3.3,
-      "usd_per_review": 0.00056,
-      "tokens": 6622
+      "seconds": 3.1,
+      "usd_per_review": 0.00053,
+      "tokens": 6524
     }
   ]
 }
