@@ -27,3 +27,4 @@ data/raw/
 # OS
 .DS_Store
 
+build/

@@ -22,8 +22,8 @@ class Settings:
     chat_model: str
     embed_model: str
 
-    # Where the Chroma index lives. On Lambda the index is pulled from S3 into
-    # /tmp at cold start, because the function's own filesystem is read-only.
+    # Where the exported index lives. On Lambda it is pulled from S3 into /tmp
+    # at cold start, because the function's own filesystem is read-only.
     index_dir: Path
     index_bucket: str | None
     index_key: str
@@ -50,9 +50,9 @@ def load() -> Settings:
         region=os.getenv("AWS_REGION", "us-east-1"),
         chat_model=os.getenv("BEDROCK_MODEL_ID", "us.amazon.nova-lite-v1:0"),
         embed_model=os.getenv("BEDROCK_EMBED_MODEL_ID", "amazon.titan-embed-text-v2:0"),
-        index_dir=Path("/tmp/chroma") if on_lambda else ROOT / "data" / "chroma",
+        index_dir=Path("/tmp/index") if on_lambda else ROOT / "data" / "index",
         index_bucket=os.getenv("INDEX_BUCKET"),
-        index_key=os.getenv("INDEX_KEY", "index/chroma.tar.gz"),
+        index_key=os.getenv("INDEX_KEY", "index/index.tar.gz"),
         upload_bucket=os.getenv("UPLOAD_BUCKET"),
         state_table=os.getenv("STATE_TABLE"),
         relevance_threshold=float(os.getenv("RELEVANCE_THRESHOLD", "0.75")),
