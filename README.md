@@ -68,7 +68,7 @@ Splitting extraction into two passes — boxes first, then arrows, with "no arro
 | Test case | Nodes | Edges | Hallucinated edges |
 |---|---|---|---|
 | `01_simple_api` | 100% | 100% | **0%** |
-| `02_flawed_webapp` | 100% | 73% | **42%** |
+| `02_flawed_webapp` | 100% | 66% | **48%** |
 
 **So a human confirms the graph before any review runs.** Not as a rubber stamp at the end — at the one step where the model is provably weak, and only there.
 
@@ -103,34 +103,37 @@ Filtering does not produce better passages. It **forces a perspective that would
 
 Two baselines, each removing exactly one decision and keeping the rest, so the difference is attributable. Means over repeated runs; temperature is 0 and the same diagram still does not produce the same review twice.
 
-`python evaluation/run.py --runs 3` · raw numbers in [`evaluation/results/evaluation.json`](evaluation/results/evaluation.json)
+`python evaluation/run.py --runs 7` · raw numbers in [`evaluation/results/evaluation.json`](evaluation/results/evaluation.json)
 
 ### On the diagram with four planted problems
 
 | Configuration | Found | **Of 4 planted** | False positives | Latency | Cost |
 |---|---|---|---|---|---|
-| B1 — specialists, no verification | 7 | **4/4** | 3 | 1.7 s | $0.00045 |
-| B2 — one generalist, verified | 3.3 | **3/4** | 0.3 | 4.5 s | $0.00047 |
-| **Full pipeline** | 6 | **4/4** | 2 | 3.3 s | $0.00056 |
+| B1 — specialists, no verification | 7.0 | **3.4 / 4** | 3.6 | 2.0 s | $0.00047 |
+| B2 — one generalist, verified | 3.0 | **2.1 / 4** | 0.9 | 4.6 s | $0.00043 |
+| **Full pipeline** | 4.4 | **3.4 / 4** | **1.0** | 3.8 s | $0.00055 |
 
-### On the deliberately clean diagram
+### On the deliberately clean diagram — correct answer is zero
 
-| Configuration | Findings reported | Correct answer |
-|---|---|---|
-| B1 — no verification | 5 | 0 |
-| **Full pipeline** | 1.3 | 0 |
+| Configuration | False positives |
+|---|---|
+| B1 — no verification | 5.6 |
+| B2 — one generalist | **0.6** |
+| **Full pipeline** | 2.0 |
 
 ### Reading the numbers
 
-- **The generalist misses a problem.** 3 of 4 against 4 of 4 — the gap the retrieval measurement predicted. It is also *slower*, because nothing runs in parallel.
-- **Verification cuts false positives without costing recall.** Five to roughly one on the clean diagram, and all four real findings survive.
+- **Verification buys precision for free.** Against B1 the recall is identical — 3.4 of 4 either way — while false positives drop from 3.6 to 1.0, and from 5.6 to 2.0 on the clean diagram. It costs 1.8 seconds and $0.00008.
+- **The specialists find substantially more than a generalist.** 3.4 of 4 against 2.1 of 4, a 60% improvement in recall, and *faster* because the three run in parallel while a single reviewer does not.
+- **The generalist is cleaner on a clean diagram.** 0.6 false positives against 2.0. Three reviewers looking for problems find more imaginary ones than one reviewer does. This is the real cost of the fan-out, and it is the trade this design accepts: on an architecture that has problems — the case the tool exists for — the specialists find half again as many of them.
 - **Cost is counted, not estimated.** Every Bedrock call records its tokens: about **$0.0005 per review**, or two thousand reviews per dollar.
 
 ### What is still wrong
 
-- The clean diagram still draws roughly one false positive per run.
+- The clean diagram draws about two false positives per run. The verifier catches most inferences from silence, not all.
 - Pillar attribution drifts: missing backups are sometimes filed under cost.
-- Results vary between runs despite temperature 0, which is why everything above is a mean.
+- Neither configuration reaches 4 of 4 reliably. The fourth finding is usually the one whose evidence spans three services.
+- Results vary between runs despite temperature 0, which is why every number above is a mean over seven.
 
 ---
 

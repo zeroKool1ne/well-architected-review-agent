@@ -167,7 +167,7 @@ Review            runs on the confirmed graph</pre>
       <table>
         <tr><th>Case</th><th>Nodes</th><th>Edges</th><th>Invented</th></tr>
         <tr><td>simple</td><td class="n good">100%</td><td class="n good">100%</td><td class="n good">0%</td></tr>
-        <tr><td>complex</td><td class="n good">100%</td><td class="n">60%</td><td class="n bad">50%</td></tr>
+        <tr><td>complex</td><td class="n good">100%</td><td class="n">66%</td><td class="n bad">48%</td></tr>
       </table>
       <p class="hint" style="margin-top:14px">Better. Not fixed. Hence the gate.</p>
     </div>
@@ -216,11 +216,11 @@ Unsupported ──────→ drop</pre>
       <h3>Clean diagram · correct answer: 0</h3>
       <table>
         <tr><th></th><th>Findings</th></tr>
-        <tr><td>without verifier</td><td class="n bad">5</td></tr>
-        <tr><td>with verifier</td><td class="n good">1</td></tr>
+        <tr><td>without verifier</td><td class="n bad">5.6</td></tr>
+        <tr><td>with verifier</td><td class="n good">2.0</td></tr>
       </table>
-      <p style="margin-top:18px">All four real findings on the flawed diagram survive.</p>
-      <p class="hint">Precision bought without paying recall.</p>
+      <p style="margin-top:18px">Recall on the flawed diagram is unchanged: 3.4 of 4 either way.</p>
+      <p class="hint">Precision bought without paying recall. 1.8 s and $0.00008.</p>
     </div>
   </div>
 </section>
@@ -252,18 +252,18 @@ Unsupported ──────→ drop</pre>
   <h2>Each baseline removes exactly one decision</h2>
   <table>
     <tr><th>Configuration</th><th>Found</th><th>Of 4 planted</th><th>False positives</th><th>Latency</th><th>Cost</th></tr>
-    <tr><td>B1 — specialists, no verification</td><td class="n">5.7</td><td class="n">3.7 / 4</td><td class="n bad">2.0</td><td class="n">1.8 s</td><td class="n">$0.00045</td></tr>
-    <tr><td>B2 — one generalist, verified</td><td class="n">3.0</td><td class="n bad">2.0 / 4</td><td class="n">1.0</td><td class="n bad">4.2 s</td><td class="n">$0.00044</td></tr>
-    <tr><td><strong>Full pipeline</strong></td><td class="n">5.0</td><td class="n good">3.3 / 4</td><td class="n">1.7</td><td class="n good">3.1 s</td><td class="n">$0.00053</td></tr>
+    <tr><td>B1 — specialists, no verification</td><td class="n">7.0</td><td class="n">3.4 / 4</td><td class="n bad">3.6</td><td class="n">2.0 s</td><td class="n">$0.00047</td></tr>
+    <tr><td>B2 — one generalist, verified</td><td class="n">3.0</td><td class="n bad">2.1 / 4</td><td class="n">0.9</td><td class="n bad">4.6 s</td><td class="n">$0.00043</td></tr>
+    <tr><td><strong>Full pipeline</strong></td><td class="n">4.4</td><td class="n good">3.4 / 4</td><td class="n good">1.0</td><td class="n good">3.8 s</td><td class="n">$0.00055</td></tr>
   </table>
   <div class="cols" style="margin-top:28px">
     <div>
       <h3>The generalist misses problems</h3>
-      <p class="hint">2 of 4 against 3.3 of 4 — the gap retrieval predicted. And slower, because nothing runs in parallel.</p>
+      <p class="hint">2.1 of 4 against 3.4 — 60% more recall, and faster, because three specialists run in parallel.</p>
     </div>
     <div>
       <h3>Verification is nearly free</h3>
-      <p class="hint">+1.3 s, +$0.00008, and five false positives become one.</p>
+      <p class="hint">+1.8 s, +$0.00008. Same recall, false positives 3.6 → 1.0.</p>
     </div>
   </div>
 </section>
@@ -302,7 +302,7 @@ Unsupported ──────→ drop</pre>
   <div class="cols">
     <div>
       <ul>
-        <li>The clean diagram still draws about one false positive per run.</li>
+        <li>The clean diagram still draws about two false positives per run — and a single generalist draws fewer. That is what the fan-out costs.</li>
         <li>Pillar attribution drifts — missing backups are sometimes filed under cost.</li>
         <li>Results vary between runs despite temperature 0. Every number here is a mean for that reason.</li>
         <li>Generated test diagrams all look alike; hand-drawn ones are not represented.</li>
