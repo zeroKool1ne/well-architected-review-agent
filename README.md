@@ -2,41 +2,24 @@
 
 ![Python](https://img.shields.io/badge/python-3.13-blue)
 ![AWS](https://img.shields.io/badge/AWS-Bedrock%20%7C%20Lambda%20%7C%20DynamoDB-FF9900)
-![LangChain](https://img.shields.io/badge/LangChain-LangGraph-1C3C3C)
+![Tests](https://img.shields.io/badge/tests-41%20passing-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-A multimodal AI pipeline that reads an **AWS architecture diagram as an image** and reviews it against the AWS Well-Architected Framework — with a human confirmation gate at the point where the model is measurably unreliable.
+A multimodal AI pipeline that reads an **AWS architecture diagram as an image** and reviews it against the AWS Well-Architected Framework — with a human confirming the reading at the point where the model is measurably unreliable.
 
 > Ironhack Final Project (GenAI). Individual work.
 
 ---
 
-## The problem this solves
+## The problem
 
-Reviewing an architecture against the Well-Architected Framework is slow, and the diagram is usually the only artefact that exists. There is no manifest, no Terraform state — just a picture in a slide deck.
+When someone asks whether an AWS architecture is sound, usually one artefact exists: a diagram in a slide deck. No Terraform state, no configuration export — a picture.
 
-A vision model can read that picture. But it cannot read it *reliably*, and it does not know that about itself.
-
-## The finding that shaped the design
-
-Before building anything, one spike: Amazon Nova Lite, one real architecture diagram (1924×1959 px), temperature 0, asked for services, connections and self-reported confidence.
-
-| Aspect | Result |
-|---|---|
-| Reading box labels (OCR) | **Excellent** — all 21 boxes correct, including `drift-check (PSI / KS test)` |
-| Extracting connections | **Hallucinated** — chained the boxes linearly, producing edges absent from the image |
-| Self-reported confidence | **Unusable** — 0.95 across the board, zero unreadable regions flagged |
-| Latency / tokens | 7.4 s · 2,683 in / 1,057 out |
-
-The model is reliable at reading *text* and unreliable at reading *structure* — while reporting high confidence in both. A pipeline that trusts the extracted graph would generate findings about an architecture that does not exist.
-
-**So the human sits at the extraction step, not at the end as an approval rubber stamp.** The reviewer corrects the graph; only then does the review run.
-
-See `experiments/vision_probe.py` for the spike.
+Checking it by hand means holding 178 best practices in your head and comparing them against that picture. It takes days, so it rarely happens. This automates the first pass, and is explicit about the one step a model cannot be trusted with.
 
 ---
 
-## Architecture
+## How it works
 
 ![Architecture overview](docs/diagrams/01_architecture_overview.svg)
 
@@ -45,8 +28,8 @@ PHASE 1 — EXTRACT (AI)          HUMAN GATE          PHASE 2 — REVIEW (AI)
 
   Upload  →  Extraction Agent → Human confirms  → Pillar Agents ×3 →  Findings
     │              │                  │                  │               │
- S3 + CDN      Bedrock          DynamoDB + SQS      Chroma index     Lambda +
-              (Nova Lite)                              in S3        CloudWatch
+ S3 + API      Bedrock            DynamoDB          index in S3      Lambda +
+   Gateway    (Nova Lite)                                           CloudWatch
 ```
 
 ### Agent topology
@@ -55,111 +38,205 @@ PHASE 1 — EXTRACT (AI)          HUMAN GATE          PHASE 2 — REVIEW (AI)
 
 | Agent | Role | Tools |
 |---|---|---|
-| **Supervisor** | Routes between specialists, merges and ranks findings | — |
-| **Extraction Agent** | Image → graph of services and connections | `read_diagram`, `request_human_review` |
-| **Pillar Agents ×3** | Security, Cost Optimization, Reliability — in parallel | `search_pillars(pillar=…)` |
+| **Supervisor** | Routes, merges, deduplicates, ranks | — |
+| **Extraction Agent** | Image → graph, in two passes | `read_diagram` |
+| **Pillar Agents ×3** | Security, Cost, Reliability — in parallel | `search_pillars(pillar=…)` |
+| **Verifier** | Judges whether each finding is supported | — |
 
-The three pillar agents are **one factory instantiated three times**: same code, different system prompt, different metadata filter on retrieval. The pattern scales to all six pillars; three are run to keep latency and cost in budget.
+The three pillar agents are **one factory instantiated three times**: same code, different system prompt, different metadata filter on retrieval.
 
-### The gate is a request boundary, not framework state
-
-```
-POST /extract  →  graph written to DynamoDB as status: pending
-                  [ reviewer corrects it in the UI → status: confirmed ]
-POST /review   →  refuses to run unless the record is confirmed
-```
-
-LangGraph offers built-in interrupts for human-in-the-loop, but those need a persistent checkpointer — fragile on stateless Lambda. Explicit state in DynamoDB is visible and debuggable when something goes wrong.
+Routing is code, not a model. A reviewer that occasionally forgets to run a pillar would be worse than one that always runs all three, and nothing about that decision needs judgement. Models do the judging — reading a diagram, weighing an architecture against guidance. Code does the control flow.
 
 ---
 
-## Design decisions and trade-offs
+## What the measurements changed
 
-| Decision | Choice | Reasoning |
-|---|---|---|
-| Model provider | Amazon Nova Lite on Bedrock | Anthropic models are blocked in the shared course account (Bedrock requires a use-case form I will not submit on an account I do not own). Nova is multimodal, available, cheaper. |
-| Model invocation | Bedrock via IAM role | No API key stored anywhere; the whole pipeline stays inside AWS. |
-| Model id | `us.amazon.nova-lite-v1:0` | The `us.` inference-profile prefix is mandatory — the bare model id is rejected with `ValidationException`. |
-| Vector store | Chroma, index persisted in S3 | The corpus is small and static. OpenSearch Serverless has a high monthly floor that a handful of whitepapers cannot justify. |
-| Compute | Lambda container image, arm64, Function URL | Demo traffic fits the free tier; nothing runs at idle. The price is cold start, addressed in the performance section. |
-| Frontend | Static HTML/JS on S3 + CloudFront | Near-zero cost, clean frontend/backend separation. |
-| Upload path | Presigned S3 URLs | No public bucket; the browser never holds credentials. |
-| HITL state | DynamoDB, two endpoints | Lambda is stateless; explicit state is inspectable. |
+Every structural decision here came from a measurement, and two of them overturned the first design.
 
----
+### 1. The vision model invents connections
 
-## Repository structure
+A spike before any code was written, on a real 1924×1959 px diagram:
+
+| | Result |
+|---|---|
+| Box labels (OCR) | **Excellent** — all 21 read correctly |
+| Connections | **Invented** — the boxes were chained into a sequence not in the picture |
+| Self-reported confidence | **Unusable** — 0.95 throughout, nothing flagged as unclear |
+
+Splitting extraction into two passes — boxes first, then arrows, with "no arrows visible" made an explicitly acceptable answer — improved this substantially but did not fix it:
+
+| Test case | Nodes | Edges | Hallucinated edges |
+|---|---|---|---|
+| `01_simple_api` | 100% | 100% | **0%** |
+| `02_flawed_webapp` | 100% | 66% | **48%** |
+
+**So a human confirms the graph before any review runs.** Not as a rubber stamp at the end — at the one step where the model is provably weak, and only there.
+
+### 2. Telling a model not to hallucinate does not work
+
+The first review agents had this in their system prompt:
+
+> *Never write that something is missing, disabled or unencrypted because the diagram is silent about it.*
+
+With that instruction in place, the deliberately **flawless** test diagram still drew findings about missing mTLS, an unnamed availability zone and absent CloudFront. Strengthening the wording made it worse.
+
+A model that wants to be useful will find something. Instruction competes with that pull, and loses.
+
+**The fix was structural, not rhetorical:** a separate call that can only judge, never propose. It receives the graph and the proposed findings and returns keep or drop. Having no incentive to find something, it rejects the inferences.
+
+### 3. Specialists see what a generalist misses
+
+Retrieval measured across pillars: for unambiguous questions, filtering changes nothing. For topics belonging to several pillars, an unfiltered search returns one pillar and stops.
 
 ```
-backend/
-  agents/        supervisor, extraction agent, pillar agent factory
-  tools/         read_diagram, search_pillars, request_human_review
-  api/           FastAPI routes (/extract, /review)
-  core/          config, AWS clients, shared models
-frontend/        upload UI and human review UI
-deployment/
-  infra/manual/  AWS CLI scripts, one per service
-evaluation/
-  datasets/      ground-truth diagrams and expected findings
-experiments/     spikes, including work that did not reach production
-tests/           pytest + moto
-docs/
-  diagrams/      architecture and agent topology
+"the workload is deployed across multiple availability zones"
+  unfiltered:       reliability, 3 of 3 — the cost of cross-zone traffic never appears
+"backups of the database"
+  unfiltered:       reliability, 3 of 3 — whether they are encrypted is never asked
 ```
 
----
-
-## Setup
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements-dev.txt
-cp .env.example .env    # then fill in
-```
-
-Requires AWS credentials with Bedrock access in `us-east-1`.
-
-*Deployment instructions: see `deployment/README.md` (added on day 6).*
+Filtering does not produce better passages. It **forces a perspective that would otherwise never be taken**.
 
 ---
 
 ## Evaluation
 
-Two baselines, both measured in LangSmith:
+Two baselines, each removing exactly one decision and keeping the rest, so the difference is attributable. Means over repeated runs; temperature is 0 and the same diagram still does not produce the same review twice.
 
-- **Baseline 1** — naive single pass, no gate. Isolates what the human gate is worth.
-- **Baseline 2** — one generalist agent instead of three pillar specialists. Isolates what the multi-agent split is worth.
+`python evaluation/run.py --runs 7` · raw numbers in [`evaluation/results/evaluation.json`](evaluation/results/evaluation.json)
 
-Metrics: graph extraction accuracy, hallucinated-edge rate, context relevancy, citation groundedness, latency, cost per request.
+### On the diagram with four planted problems
 
-*Results: added on day 8.*
+| Configuration | Found | **Of 4 planted** | False positives | Latency | Cost |
+|---|---|---|---|---|---|
+| B1 — specialists, no verification | 7.0 | **3.4 / 4** | 3.6 | 2.0 s | $0.00047 |
+| B2 — one generalist, verified | 3.0 | **2.1 / 4** | 0.9 | 4.6 s | $0.00043 |
+| **Full pipeline** | 4.4 | **3.4 / 4** | **1.0** | 3.8 s | $0.00055 |
+
+### On the deliberately clean diagram — correct answer is zero
+
+| Configuration | False positives |
+|---|---|
+| B1 — no verification | 5.6 |
+| B2 — one generalist | **0.6** |
+| **Full pipeline** | 2.0 |
+
+### Reading the numbers
+
+- **Verification buys precision for free.** Against B1 the recall is identical — 3.4 of 4 either way — while false positives drop from 3.6 to 1.0, and from 5.6 to 2.0 on the clean diagram. It costs 1.8 seconds and $0.00008.
+- **The specialists find substantially more than a generalist.** 3.4 of 4 against 2.1 of 4, a 60% improvement in recall, and *faster* because the three run in parallel while a single reviewer does not.
+- **The generalist is cleaner on a clean diagram.** 0.6 false positives against 2.0. Three reviewers looking for problems find more imaginary ones than one reviewer does. This is the real cost of the fan-out, and it is the trade this design accepts: on an architecture that has problems — the case the tool exists for — the specialists find half again as many of them.
+- **Cost is counted, not estimated.** Every Bedrock call records its tokens: about **$0.0005 per review**, or two thousand reviews per dollar.
+
+### What is still wrong
+
+- The clean diagram draws about two false positives per run. The verifier catches most inferences from silence, not all.
+- Pillar attribution drifts: missing backups are sometimes filed under cost.
+- Neither configuration reaches 4 of 4 reliably. The fourth finding is usually the one whose evidence spans three services.
+- Results vary between runs despite temperature 0, which is why every number above is a mean over seven.
 
 ---
 
-## Status
+## Running it
 
-| Day | Milestone | State |
+### Local
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements-dev.txt && pip install -e .
+cp .env.example .env
+
+python backend/ingestion/fetch_corpus.py     # download the whitepapers
+python backend/ingestion/build_index.py      # chunk, validate, embed (~5 min)
+python backend/ingestion/export_index.py     # flat array for deployment
+
+uvicorn backend.api.main:app --reload        # http://localhost:8000
+```
+
+Needs AWS credentials with Bedrock access in `us-east-1`, and `graphviz` (`brew install graphviz`) to regenerate test diagrams.
+
+### Deploy
+
+```bash
+source deployment/infra/manual/00_variables.sh
+bash deployment/infra/manual/10_storage.sh      # S3, DynamoDB
+bash deployment/infra/manual/20_iam.sh          # role and policy
+bash deployment/infra/manual/30_package.sh      # zip, upload index
+bash deployment/infra/manual/40_lambda.sh       # function
+bash deployment/infra/manual/50_apigateway.sh   # HTTP API
+```
+
+Each service gets its own numbered script so the order is visible and single steps can be repeated. `90_teardown.sh` removes everything.
+
+> **On the demo endpoint:** this runs in a shared teaching account whose access ends with the course, so no permanent URL is promised. The scripts rebuild it in about five minutes, and the stack is torn down after the demo rather than left reachable.
+
+### Tests
+
+```bash
+pytest                   # 41 tests, AWS mocked with moto, no network, no cost
+ruff check backend/ evaluation/
+```
+
+---
+
+## Design decisions
+
+| Decision | Choice | Reasoning |
 |---|---|---|
-| 1 | Vision spike, repository structure | done |
-| 2 | Corpus ingestion, Chroma index with pillar metadata | |
-| 3 | Extraction agent | |
-| 4 | Supervisor and pillar agents | |
-| 5 | Human-in-the-loop path | |
-| 6 | Deployment: ECR, Lambda, IAM | |
-| 7 | CloudFront, frontend, review UI | |
-| 8 | Evaluation | |
-| 9 | Tests and observability | |
-| 10 | Documentation and slides | |
+| Model provider | **Amazon Nova Lite** on Bedrock | Anthropic models are blocked in the shared account — Bedrock requires a use-case form that should not be submitted against an account one does not own. Nova is multimodal, available, cheaper. |
+| Model id | `us.amazon.nova-lite-v1:0` | The `us.` inference-profile prefix is mandatory; the bare id is rejected with `ValidationException`. |
+| Auth to Bedrock | **IAM role** | No API key stored anywhere. |
+| Vector store | **Chroma** to build, **numpy array** to serve | chromadb carries 82 MB of ONNX runtime for an embedding model nothing here calls. Both paths return identical passages at identical distances. |
+| Packaging | **zip**, not a container | 60 MB of dependencies fits Lambda's limit with room to spare, and needs no registry or image pull. |
+| Compute | Lambda, arm64, 1536 MB | Graviton is cheaper per ms; Lambda scales CPU with memory, so paying for a shorter cold start is cheaper than a long one. |
+| HTTP | **API Gateway**, not a function URL | Public function URLs are blocked at the organisation level in this account — correct policy, `AuthType NONE`, still 403. An HTTP API is where throttling and an authorizer belong anyway. |
+| HITL state | DynamoDB, two endpoints | Lambda is stateless, and explicit state is inspectable when something goes wrong. |
+| Upload | In the request, not presigned | Diagrams sit well under the payload limit; one round trip is simpler to operate and demonstrate than three. |
+| Relevance floor | 0.75 cosine distance | Where a pillar has nothing to say, its closest passage sits around 0.87. Below the floor a specialist reports nothing instead of constructing something. |
+
+---
+
+## Repository
+
+```
+backend/
+  agents/        extraction, pillar factory, verifier, supervisor
+  tools/         retrieval with the pillar filter
+  api/           FastAPI: /extract, /review/{id}
+  core/          config, models, Bedrock access, state store
+  ingestion/     corpus download, chunking, indexing, export
+frontend/        upload and human correction UI
+deployment/
+  infra/manual/  one numbered script per service
+evaluation/
+  datasets/      generated diagrams with their ground truth
+  run.py         the evaluation
+experiments/     measurements, including what did not ship
+tests/           pytest + moto
+docs/diagrams/   architecture and agent topology
+```
+
+### Test data
+
+Diagrams are generated from code, so the ground truth is exact rather than hand-labelled — which is what makes the hallucinated-edge rate measurable at all. `01_simple_api` is deliberately flawless, to catch a reviewer that invents findings to look useful. `02_flawed_webapp` carries one violation per pillar, stated on the node labels because a vision model can only report what the picture says.
+
+---
+
+## Known limitations
+
+- **Three pillars, not six.** The factory scales to all six; three were run to keep latency and cost in budget, and because ground truth exists for those three.
+- **Generated test diagrams look alike.** Same icons, same layout. A hand-drawn diagram from a customer deck is not represented, which is why a real diagram is kept as an additional case.
+- **The human gate is mandatory, by design.** This is not a fire-and-forget tool and does not try to be.
+- **`REL12-BP06` is absent from the corpus** — it never appears as a heading in the source PDF, only as a cross-reference. Recorded in `KNOWN_ABSENT` so the completeness check stays strict.
 
 ---
 
 ## Credits and sources
 
 - **AWS Well-Architected Framework** whitepapers — published by AWS, used as the retrieval corpus
-- **Amazon Bedrock** (Nova Lite) for vision and reasoning
-- **LangChain / LangGraph / LangSmith** for agent orchestration and evaluation
-- **Chroma** as the vector store
+- **Amazon Bedrock** — Nova Lite for vision and reasoning, Titan Embed v2 for retrieval
+- **Chroma** — vector store for index construction
+- **FastAPI**, **Mangum**, **diagrams** — API, Lambda adapter, test fixtures
 - **Tooling** — AWS CLI, Claude Code
 
 ## License

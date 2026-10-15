@@ -1,0 +1,209 @@
+{
+  "review_id": "104cb43ef10c",
+  "status": "reviewed",
+  "source": "diagram.png",
+  "graph": {
+    "nodes": [
+      {
+        "id": "clients",
+        "service": "users",
+        "label": "Clients",
+        "group": null
+      },
+      {
+        "id": "application-load-balancer",
+        "service": "elb",
+        "label": "Application Load Balancer",
+        "group": "eu-central-1a"
+      },
+      {
+        "id": "ec2-instance",
+        "service": "ec2",
+        "label": "EC2 m5.2xlarge on-demand, running 24/7 ~8% CPU",
+        "group": "eu-central-1a"
+      },
+      {
+        "id": "rds-postgresql",
+        "service": "rds",
+        "label": "RDS PostgreSQL single-AZ, no automated backups",
+        "group": "eu-central-1a"
+      },
+      {
+        "id": "s3-bucket",
+        "service": "s3",
+        "label": "S3 bucket public read enabled no default encryption",
+        "group": null
+      },
+      {
+        "id": "cloudwatch-logs",
+        "service": "cloudwatch",
+        "label": "CloudWatch Logs",
+        "group": null
+      }
+    ],
+    "edges": [
+      {
+        "source": "clients",
+        "target": "application-load-balancer",
+        "label": "HTTPS"
+      },
+      {
+        "source": "application-load-balancer",
+        "target": "ec2-instance",
+        "label": "HTTP"
+      },
+      {
+        "source": "ec2-instance",
+        "target": "rds-postgresql",
+        "label": "SQL"
+      },
+      {
+        "source": "ec2-instance",
+        "target": "s3-bucket",
+        "label": "read/write"
+      },
+      {
+        "source": "ec2-instance",
+        "target": "cloudwatch-logs",
+        "label": "logs"
+      }
+    ],
+    "unreadable": []
+  },
+  "created_at": 1792049721,
+  "expires_at": 1792136134,
+  "confirmed_at": 1792049730,
+  "findings": [
+    {
+      "pillar": "reliability",
+      "issue": "No automated backups for RDS PostgreSQL, increasing the risk of data loss.",
+      "evidence": [
+        "rds-postgresql"
+      ],
+      "recommendation": "Enable automated backups for RDS PostgreSQL.",
+      "citation": {
+        "bp_id": "REL13-BP02",
+        "bp_title": "Use de\ufb01ned recovery strategies to meet the recovery",
+        "page": 241,
+        "pillar": "reliability"
+      },
+      "severity": "high"
+    },
+    {
+      "pillar": "cost",
+      "issue": "S3 bucket is publicly readable and lacks default encryption.",
+      "evidence": [
+        "s3-bucket"
+      ],
+      "recommendation": "Disable public read access and enable default encryption for the S3 bucket.",
+      "citation": {
+        "bp_id": "COST07-BP04",
+        "bp_title": "Implement pricing models for all components of this",
+        "page": 115,
+        "pillar": "cost"
+      },
+      "severity": "high"
+    },
+    {
+      "pillar": "security",
+      "issue": "S3 bucket is publicly readable without encryption.",
+      "evidence": [],
+      "recommendation": "Disable public read access and enable default encryption on the S3 bucket.",
+      "citation": {
+        "bp_id": "SEC08-BP02",
+        "bp_title": "Enforce encryption at rest",
+        "page": 158,
+        "pillar": "security"
+      },
+      "severity": "high"
+    },
+    {
+      "pillar": "reliability",
+      "issue": "Single Availability Zone deployment increases the risk of downtime due to AZ-specific failures.",
+      "evidence": [
+        "application-load-balancer",
+        "ec2-instance",
+        "rds-postgresql"
+      ],
+      "recommendation": "Deploy the EC2 instance and RDS PostgreSQL in multiple Availability Zones.",
+      "citation": {
+        "bp_id": "REL10-BP01",
+        "bp_title": "Deploy the workload to multiple locations",
+        "page": 176,
+        "pillar": "reliability"
+      },
+      "severity": "high"
+    },
+    {
+      "pillar": "reliability",
+      "issue": "S3 bucket data is not encrypted by default, potentially exposing sensitive data.",
+      "evidence": [
+        "s3-bucket"
+      ],
+      "recommendation": "Enable default encryption for the S3 bucket.",
+      "citation": {
+        "bp_id": "REL10-BP01",
+        "bp_title": "Deploy the workload to multiple locations",
+        "page": 176,
+        "pillar": "reliability"
+      },
+      "severity": "medium"
+    }
+  ],
+  "rejected": [
+    {
+      "pillar": "security",
+      "issue": "RDS PostgreSQL instance is not encrypted at rest.",
+      "evidence": [],
+      "recommendation": "Enable encryption at rest for the RDS PostgreSQL instance.",
+      "citation": {
+        "bp_id": "SEC08-BP02",
+        "bp_title": "Enforce encryption at rest",
+        "page": 158,
+        "pillar": "security"
+      },
+      "severity": "high"
+    },
+    {
+      "pillar": "cost",
+      "issue": "EC2 instance is oversized for its current utilization.",
+      "evidence": [
+        "ec2-instance"
+      ],
+      "recommendation": "Downsize the EC2 instance to match the current 8% CPU utilization.",
+      "citation": {
+        "bp_id": "COST05-BP03",
+        "bp_title": "Perform a thorough analysis of each component",
+        "page": 85,
+        "pillar": "cost"
+      },
+      "severity": "medium"
+    },
+    {
+      "pillar": "security",
+      "issue": "No authentication is mentioned for network communications.",
+      "evidence": [],
+      "recommendation": "Implement authentication for network communications between services.",
+      "citation": {
+        "bp_id": "SEC09-BP03",
+        "bp_title": "Authenticate network communications",
+        "page": 174,
+        "pillar": "security"
+      },
+      "severity": "medium"
+    },
+    {
+      "pillar": "security",
+      "issue": "No network layers or private subnets are used for EC2 instances.",
+      "evidence": [],
+      "recommendation": "Deploy EC2 instances in private subnets and use network layers for security.",
+      "citation": {
+        "bp_id": "SEC05-BP01",
+        "bp_title": "Create network layers",
+        "page": 117,
+        "pillar": "security"
+      },
+      "severity": "medium"
+    }
+  ]
+}

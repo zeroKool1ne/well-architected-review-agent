@@ -1,0 +1,22 @@
+# What the deployed function needs, which is less than development does.
+#
+# Left out deliberately:
+#   chromadb   builds the index, and brings 82 MB of ONNX runtime for an
+#              embedding model this project never calls. The function reads the
+#              exported array instead; see backend/ingestion/export_index.py.
+#   pypdf      only used while ingesting the whitepapers.
+#   uvicorn    the local server; Lambda invokes the app through Mangum.
+#
+# boto3 is present in the Lambda runtime already, but an older build than the
+# Bedrock Converse API needs, so it is pinned and shipped.
+
+fastapi==0.118.0
+mangum==0.19.0
+pydantic==2.11.9
+python-multipart==0.0.20
+numpy==2.2.6  # newest with manylinux2014 aarch64 wheels for cp313
+boto3==1.40.47
+
+# Tracing for the agent calls. langsmith is a small client, not the LangChain
+# runtime, so it costs little in package size.
+langsmith==0.4.41

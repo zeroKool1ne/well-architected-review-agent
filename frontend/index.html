@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Well-Architected Review Agent</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #0f172a; --muted: #64748b; --line: #e2e8f0;
+    --panel: #f8fafc; --accent: #0284c7;
+    --warn-bg: #fef3c7; --warn-line: #f59e0b; --warn-fg: #78350f;
+    --high: #b91c1c; --medium: #b45309; --low: #15803d;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px 16px 64px;
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    color: var(--fg); background: var(--bg);
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  h1 { font-size: 24px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 28px; }
+  h2 { font-size: 16px; margin: 0 0 12px; }
+
+  .step { border: 1px solid var(--line); border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+  .step[hidden] { display: none; }
+  .step.gate { background: var(--warn-bg); border: 2px solid var(--warn-line); }
+  .step.gate h2, .step.gate p { color: var(--warn-fg); }
+
+  .badge {
+    display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; padding: 3px 8px; border-radius: 4px;
+    background: var(--panel); color: var(--muted); margin-bottom: 10px;
+  }
+  .step.gate .badge { background: var(--warn-line); color: #fff; }
+
+  button {
+    font: inherit; font-weight: 600; padding: 9px 16px; border-radius: 7px;
+    border: 1px solid var(--accent); background: var(--accent); color: #fff; cursor: pointer;
+  }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  button.ghost { background: transparent; color: var(--accent); }
+  input[type=file] { font: inherit; }
+  input[type=text] {
+    font: inherit; padding: 6px 8px; border: 1px solid var(--line);
+    border-radius: 6px; min-width: 110px;
+  }
+
+  table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 14px; }
+  th { text-align: left; font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+       color: var(--muted); padding: 0 8px 6px; font-weight: 600; }
+  td { padding: 7px 8px; border-top: 1px solid var(--line); vertical-align: top; }
+  td.drop { width: 1%; white-space: nowrap; }
+  tr.removed td { opacity: .35; text-decoration: line-through; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
+
+  .finding { border-top: 1px solid var(--line); padding: 14px 0; }
+  .finding:first-of-type { border-top: 0; }
+  .finding .meta { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .sev { font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: .05em; }
+  .sev.high { color: var(--high); } .sev.medium { color: var(--medium); } .sev.low { color: var(--low); }
+  .rec { color: var(--muted); margin-top: 3px; }
+  .cite { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+  .note { background: var(--panel); border-left: 3px solid var(--line);
+          padding: 10px 14px; margin: 12px 0; font-size: 14px; color: var(--muted); }
+  .error { background: #fef2f2; border-left-color: var(--high); color: var(--high); }
+  .spin { color: var(--muted); font-style: italic; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Well-Architected Review Agent</h1>
+  <p class="sub">An AWS architecture diagram goes in. Findings per pillar come out — once a human has confirmed what the model read.</p>
+
+  <!-- 1 ---------------------------------------------------------------- -->
+  <section class="step" id="step-upload">
+    <span class="badge">Step 1 — Upload</span>
+    <h2>Choose an architecture diagram</h2>
+    <div class="row">
+      <input type="file" id="file" accept="image/png,image/jpeg,image/gif,image/webp">
+      <button id="btn-extract" disabled>Read diagram</button>
+    </div>
+    <div id="upload-msg"></div>
+  </section>
+
+  <!-- 2 ---------------------------------------------------------------- -->
+  <section class="step gate" id="step-gate" hidden>
+    <span class="badge">Step 2 — Human gate</span>
+    <h2>Check what the model read</h2>
+    <p>
+      The model reads labels reliably but <strong>invents connections</strong> — measured at
+      up to 50% hallucinated edges. Remove anything that is not in your diagram, add what is
+      missing. Nothing is reviewed until you confirm.
+    </p>
+
+    <h2 style="margin-top:18px">Services</h2>
+    <table id="nodes"><thead><tr><th>ID</th><th>Service</th><th>Label</th><th></th></tr></thead><tbody></tbody></table>
+
+    <h2>Connections</h2>
+    <table id="edges"><thead><tr><th>From</th><th>To</th><th>Label</th><th></th></tr></thead><tbody></tbody></table>
+    <div class="row" style="margin-bottom:14px">
+      <input type="text" id="new-from" placeholder="from id">
+      <input type="text" id="new-to" placeholder="to id">
+      <input type="text" id="new-label" placeholder="label (optional)">
+      <button class="ghost" id="btn-add-edge">Add connection</button>
+    </div>
+
+    <div id="unreadable"></div>
+    <button id="btn-confirm">Confirm and run review</button>
+  </section>
+
+  <!-- 3 ---------------------------------------------------------------- -->
+  <section class="step" id="step-findings" hidden>
+    <span class="badge">Step 3 — Findings</span>
+    <h2 id="findings-title">Review</h2>
+    <div id="findings"></div>
+    <div id="rejected"></div>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const state = { reviewId: null, nodes: [], edges: [] };
+
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function note(el, text, isError) {
+  el.innerHTML = text ? `<div class="note${isError ? " error" : ""}">${esc(text)}</div>` : "";
+}
+
+$("file").onchange = () => { $("btn-extract").disabled = !$("file").files.length; };
+
+// --- Step 1: read the diagram ------------------------------------------
+$("btn-extract").onclick = async () => {
+  const file = $("file").files[0];
+  if (!file) return;
+
+  $("btn-extract").disabled = true;
+  $("upload-msg").innerHTML = '<div class="note spin">Reading the diagram…</div>';
+
+  const body = new FormData();
+  body.append("file", file);
+
+  try {
+    const res = await fetch("/extract", { method: "POST", body });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+
+    state.reviewId = data.review_id;
+    state.nodes = data.graph.nodes.map(n => ({ ...n, removed: false }));
+    state.edges = data.graph.edges.map(e => ({ ...e, removed: false }));
+
+    note($("upload-msg"), `Read in ${data.elapsed_seconds}s — ${state.nodes.length} services, ${state.edges.length} connections.`);
+    renderGate(data.graph.unreadable || []);
+    $("step-gate").hidden = false;
+    $("step-gate").scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (err) {
+    note($("upload-msg"), err.message, true);
+  } finally {
+    $("btn-extract").disabled = false;
+  }
+};
+
+// --- Step 2: the human corrects ----------------------------------------
+function renderGate(unreadable) {
+  const nodeRows = state.nodes.map((n, i) => `
+    <tr class="${n.removed ? "removed" : ""}">
+      <td><code>${esc(n.id)}</code></td>
+      <td>${esc(n.service)}</td>
+      <td>${esc(n.label)}</td>
+      <td class="drop"><button class="ghost" data-node="${i}">${n.removed ? "Undo" : "Remove"}</button></td>
+    </tr>`).join("");
+  $("nodes").querySelector("tbody").innerHTML = nodeRows;
+
+  const edgeRows = state.edges.map((e, i) => `
+    <tr class="${e.removed ? "removed" : ""}">
+      <td><code>${esc(e.source)}</code></td>
+      <td><code>${esc(e.target)}</code></td>
+      <td>${esc(e.label || "")}</td>
+      <td class="drop"><button class="ghost" data-edge="${i}">${e.removed ? "Undo" : "Remove"}</button></td>
+    </tr>`).join("");
+  $("edges").querySelector("tbody").innerHTML = edgeRows
+    || '<tr><td colspan="4" style="color:var(--muted)">No connections reported.</td></tr>';
+
+  $("unreadable").innerHTML = unreadable.length
+    ? `<div class="note">The model flagged as unclear: ${unreadable.map(esc).join("; ")}</div>`
+    : "";
+
+  $("nodes").querySelectorAll("[data-node]").forEach(b => {
+    b.onclick = () => {
+      const i = +b.dataset.node;
+      state.nodes[i].removed = !state.nodes[i].removed;
+      // Dropping a service drops anything attached to it, otherwise the
+      // confirmed graph would reference something that is not there.
+      const id = state.nodes[i].id;
+      state.edges.forEach(e => {
+        if (e.source === id || e.target === id) e.removed = state.nodes[i].removed;
+      });
+      renderGate(unreadable);
+    };
+  });
+  $("edges").querySelectorAll("[data-edge]").forEach(b => {
+    b.onclick = () => {
+      const i = +b.dataset.edge;
+      state.edges[i].removed = !state.edges[i].removed;
+      renderGate(unreadable);
+    };
+  });
+
+  $("btn-add-edge").onclick = () => {
+    const source = $("new-from").value.trim();
+    const target = $("new-to").value.trim();
+    const ids = state.nodes.filter(n => !n.removed).map(n => n.id);
+    if (!ids.includes(source) || !ids.includes(target)) {
+      note($("unreadable"), `Both ids must be listed above. Known: ${ids.join(", ")}`, true);
+      return;
+    }
+    state.edges.push({ source, target, label: $("new-label").value.trim() || null, removed: false });
+    $("new-from").value = $("new-to").value = $("new-label").value = "";
+    renderGate(unreadable);
+  };
+}
+
+// --- Step 3: run the review --------------------------------------------
+$("btn-confirm").onclick = async () => {
+  $("btn-confirm").disabled = true;
+  $("step-findings").hidden = false;
+  $("findings").innerHTML = '<div class="note spin">Three pillar specialists are reviewing…</div>';
+  $("rejected").innerHTML = "";
+  $("step-findings").scrollIntoView({ behavior: "smooth", block: "start" });
+
+  const graph = {
+    nodes: state.nodes.filter(n => !n.removed).map(({ removed, ...n }) => n),
+    edges: state.edges.filter(e => !e.removed).map(({ removed, ...e }) => e),
+    unreadable: [],
+  };
+
+  try {
+    const res = await fetch(`/review/${state.reviewId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ graph }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+    renderFindings(data);
+  } catch (err) {
+    note($("findings"), err.message, true);
+  } finally {
+    $("btn-confirm").disabled = false;
+  }
+};
+
+function renderFindings(result) {
+  const findings = result.findings || [];
+  $("findings-title").textContent = findings.length
+    ? `${findings.length} finding${findings.length === 1 ? "" : "s"}`
+    : "No findings";
+
+  $("findings").innerHTML = findings.length
+    ? findings.map(f => `
+      <div class="finding">
+        <div class="meta">
+          <span class="sev ${esc(f.severity)}">${esc(f.severity)}</span>
+          &middot; ${esc(f.pillar)}
+          ${f.evidence?.length ? "&middot; " + f.evidence.map(e => `<code>${esc(e)}</code>`).join(", ") : ""}
+        </div>
+        <div>${esc(f.issue)}</div>
+        ${f.recommendation ? `<div class="rec">→ ${esc(f.recommendation)}</div>` : ""}
+        ${f.citation
+          ? `<div class="cite">${esc(f.citation.bp_id)} &mdash; ${esc(f.citation.bp_title)}, p.&nbsp;${esc(f.citation.page)}</div>`
+          : `<div class="cite">No source — reported without a citation.</div>`}
+      </div>`).join("")
+    : '<div class="note">Nothing the guidance covers was found in this architecture.</div>';
+
+  const silent = result.pillars_with_nothing_to_say || [];
+  const rejected = result.rejected || [];
+  let extra = "";
+  if (silent.length) {
+    extra += `<div class="note">No relevant guidance retrieved for: ${silent.map(esc).join(", ")}. Those pillars reported nothing rather than guessing.</div>`;
+  }
+  if (rejected.length) {
+    extra += `<div class="note"><strong>${rejected.length} proposed finding${rejected.length === 1 ? "" : "s"} rejected</strong> by the verification step for not being supported by the diagram:<br>` +
+      rejected.map(f => `&middot; ${esc(f.issue)}`).join("<br>") + "</div>";
+  }
+  $("rejected").innerHTML = extra;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+{
+  "slug": "01_simple_api",
+  "title": "Serverless API",
+  "purpose": "Baseline for extraction accuracy. No deliberate violations.",
+  "nodes": [
+    {
+      "id": "users",
+      "service": "Users",
+      "label": "Clients"
+    },
+    {
+      "id": "apigw",
+      "service": "API Gateway",
+      "label": "API Gateway (REST, TLS)"
+    },
+    {
+      "id": "fn",
+      "service": "Lambda",
+      "label": "Lambda request handler"
+    },
+    {
+      "id": "table",
+      "service": "DynamoDB",
+      "label": "DynamoDB (encrypted, PITR on)"
+    },
+    {
+      "id": "logs",
+      "service": "CloudWatch",
+      "label": "CloudWatch Logs (30 day retention)"
+    }
+  ],
+  "edges": [
+    {
+      "from": "users",
+      "to": "apigw",
+      "label": "HTTPS"
+    },
+    {
+      "from": "apigw",
+      "to": "fn",
+      "label": "invoke"
+    },
+    {
+      "from": "fn",
+      "to": "table",
+      "label": "read/write"
+    },
+    {
+      "from": "fn",
+      "to": "logs",
+      "label": "logs"
+    }
+  ],
+  "expected_findings": []
+}

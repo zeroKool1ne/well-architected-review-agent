@@ -1,0 +1,107 @@
+{
+  "runs_per_configuration": 7,
+  "extraction": [
+    {
+      "case": "01_simple_api",
+      "node_recall": 1.0,
+      "spurious_nodes": 0,
+      "edge_recall": 1.0,
+      "hallucinated_edge_rate": 0.0,
+      "seconds": 2.9
+    },
+    {
+      "case": "02_flawed_webapp",
+      "node_recall": 1.0,
+      "spurious_nodes": 1,
+      "edge_recall": 0.66,
+      "hallucinated_edge_rate": 0.48,
+      "seconds": 4.0
+    }
+  ],
+  "review": [
+    {
+      "case": "01_simple_api",
+      "configuration": "B1 \u2014 specialists, no verification",
+      "findings": 5.6,
+      "findings_range": "5\u20136",
+      "matched": 0,
+      "false_positives": 5.6,
+      "recall": 1.0,
+      "precision": 0.0,
+      "pillars_covered": 3,
+      "seconds": 4.3,
+      "usd_per_review": 0.0004,
+      "tokens": 5423
+    },
+    {
+      "case": "01_simple_api",
+      "configuration": "B2 \u2014 one generalist, verified",
+      "findings": 0.6,
+      "findings_range": "0\u20131",
+      "matched": 0,
+      "false_positives": 0.6,
+      "recall": 1.0,
+      "precision": 0.43,
+      "pillars_covered": 0.6,
+      "seconds": 3.7,
+      "usd_per_review": 0.00039,
+      "tokens": 4515
+    },
+    {
+      "case": "01_simple_api",
+      "configuration": "Full \u2014 specialists, verified",
+      "findings": 2,
+      "findings_range": "0\u20134",
+      "matched": 0,
+      "false_positives": 2,
+      "recall": 1.0,
+      "precision": 0.14,
+      "pillars_covered": 1.4,
+      "seconds": 3.6,
+      "usd_per_review": 0.00051,
+      "tokens": 6275
+    },
+    {
+      "case": "02_flawed_webapp",
+      "configuration": "B1 \u2014 specialists, no verification",
+      "findings": 7,
+      "findings_range": "5\u20139",
+      "matched": 3.4,
+      "false_positives": 3.6,
+      "recall": 0.86,
+      "precision": 0.51,
+      "pillars_covered": 2.9,
+      "seconds": 2.0,
+      "usd_per_review": 0.00047,
+      "tokens": 5823
+    },
+    {
+      "case": "02_flawed_webapp",
+      "configuration": "B2 \u2014 one generalist, verified",
+      "findings": 3,
+      "findings_range": "3\u20133",
+      "matched": 2.1,
+      "false_positives": 0.9,
+      "recall": 0.54,
+      "precision": 0.71,
+      "pillars_covered": 3,
+      "seconds": 4.6,
+      "usd_per_review": 0.00043,
+      "tokens": 4644
+    },
+    {
+      "case": "02_flawed_webapp",
+      "configuration": "Full \u2014 specialists, verified",
+      "findings": 4.4,
+      "findings_range": "4\u20135",
+      "matched": 3.4,
+      "false_positives": 1,
+      "recall": 0.86,
+      "precision": 0.79,
+      "pillars_covered": 2.9,
+      "seconds": 3.8,
+      "usd_per_review": 0.00055,
+      "tokens": 6601
+    }
+  ]
+}
