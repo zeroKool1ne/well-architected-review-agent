@@ -65,10 +65,25 @@ A spike before any code was written, on a real 1924×1959 px diagram:
 
 Splitting extraction into two passes — boxes first, then arrows, with "no arrows visible" made an explicitly acceptable answer — improved this substantially but did not fix it:
 
-| Test case | Nodes | Edges | Hallucinated edges |
-|---|---|---|---|
-| `01_simple_api` | 100% | 100% | **0%** |
-| `02_flawed_webapp` | 100% | 66% | **48%** |
+Reading a diagram turned out to be three abilities that fail separately, so
+they are scored separately:
+
+| Test case | Boxes found | Services named | Edges traced | Hallucinated edges |
+|---|---|---|---|---|
+| `01_simple_api` — flat, generated | 100% | 100% | 100% | **0%** |
+| `02_flawed_webapp` — flat, generated | 100% | 100% | 60% | **50%** |
+| `03_arcentry_3d` — isometric, from Terraform | **100%** | **0%** | 3% | **98%** |
+
+**The boxes are always found. What breaks is first the connecting, then the
+naming.** The third case is an isometric rendering with vendor 3D models and
+rotated labels — exported from Arcentry, which generated it from this
+project's own Terraform plan. Every box is located and not one service is
+identified, and the labels themselves start to degrade: `drift-check` is read
+as `diff-check`, `schedule-dlq` as `scheduled`.
+
+That is a sharper statement than the project started with. The model is an
+excellent reader of horizontal text and a poor reader of pictures — and once
+the text stops being horizontal, the reading goes too.
 
 **So a human confirms the graph before any review runs.** Not as a rubber stamp at the end — at the one step where the model is provably weak, and only there.
 
@@ -103,37 +118,38 @@ Filtering does not produce better passages. It **forces a perspective that would
 
 Two baselines, each removing exactly one decision and keeping the rest, so the difference is attributable. Means over repeated runs; temperature is 0 and the same diagram still does not produce the same review twice.
 
-`python evaluation/run.py --runs 7` · raw numbers in [`evaluation/results/evaluation.json`](evaluation/results/evaluation.json)
+`python evaluation/run.py --runs 5` · raw numbers in [`evaluation/results/evaluation.json`](evaluation/results/evaluation.json)
 
 ### On the diagram with four planted problems
 
 | Configuration | Found | **Of 4 planted** | False positives | Latency | Cost |
 |---|---|---|---|---|---|
-| B1 — specialists, no verification | 7.0 | **3.4 / 4** | 3.6 | 2.0 s | $0.00047 |
-| B2 — one generalist, verified | 3.0 | **2.1 / 4** | 0.9 | 4.6 s | $0.00043 |
-| **Full pipeline** | 4.4 | **3.4 / 4** | **1.0** | 3.8 s | $0.00055 |
+| B1 — specialists, no verification | 5.2 | **3.4 / 4** | 1.8 | 2.3 s | $0.00045 |
+| B2 — one generalist, verified | 3.6 | **2.2 / 4** | 1.4 | 5.0 s | $0.00044 |
+| **Full pipeline** | 5.0 | **3.0 / 4** | 2.0 | 3.8 s | $0.00055 |
 
-### On the deliberately clean diagram — correct answer is zero
+### On the two diagrams where the correct answer is zero
 
-| Configuration | False positives |
-|---|---|
-| B1 — no verification | 5.6 |
-| B2 — one generalist | **0.6** |
-| **Full pipeline** | 2.0 |
+| Configuration | `01_simple_api` | `03_arcentry_3d` |
+|---|---|---|
+| B1 — no verification | 5.0 | 6.4 |
+| B2 — one generalist | **0.8** | **0.2** |
+| **Full pipeline** | 1.2 | 2.8 |
 
 ### Reading the numbers
 
-- **Verification buys precision for free.** Against B1 the recall is identical — 3.4 of 4 either way — while false positives drop from 3.6 to 1.0, and from 5.6 to 2.0 on the clean diagram. It costs 1.8 seconds and $0.00008.
-- **The specialists find substantially more than a generalist.** 3.4 of 4 against 2.1 of 4, a 60% improvement in recall, and *faster* because the three run in parallel while a single reviewer does not.
-- **The generalist is cleaner on a clean diagram.** 0.6 false positives against 2.0. Three reviewers looking for problems find more imaginary ones than one reviewer does. This is the real cost of the fan-out, and it is the trade this design accepts: on an architecture that has problems — the case the tool exists for — the specialists find half again as many of them.
+- **Verification is what keeps the output honest.** On the two clean diagrams it cuts false positives from 5.0 to 1.2 and from 6.4 to 2.8, for 1.5 seconds and $0.00008. It is not free in recall: on the flawed diagram the full pipeline lands at 3.0 of 4 against B1's 3.4, so the verifier occasionally rejects a real finding along with the invented ones.
+- **The fan-out is a trade, not a win.** The specialists find 3.0 of 4 planted problems where a single generalist finds 2.2 — 36% better on the case the tool exists for. They also produce more false positives on diagrams that have no problems (1.2 against 0.8, and 2.8 against 0.2). Three reviewers looking for faults find more imaginary ones than one reviewer does.
+- **The third case shows the failure mode that matters.** Extraction collapsed completely — no service identified, 98% of edges invented — and the review still reported nothing, because the verifier rejected all four speculative findings. **The parts fail independently, and the system becomes useless before it becomes wrong.**
 - **Cost is counted, not estimated.** Every Bedrock call records its tokens: about **$0.0005 per review**, or two thousand reviews per dollar.
 
 ### What is still wrong
 
-- The clean diagram draws about two false positives per run. The verifier catches most inferences from silence, not all.
+- Clean diagrams draw one to three false positives per run. The verifier catches most inferences from silence, not all.
+- Verification sometimes rejects a real finding. 3.0 of 4 against 3.4 without it — precision is bought with a little recall, not none.
 - Pillar attribution drifts: missing backups are sometimes filed under cost.
-- Neither configuration reaches 4 of 4 reliably. The fourth finding is usually the one whose evidence spans three services.
-- Results vary between runs despite temperature 0, which is why every number above is a mean over seven.
+- Isometric diagrams are not usable. Boxes are found, nothing else survives.
+- Results vary between runs despite temperature 0, which is why every number above is a mean over five.
 
 ---
 
@@ -218,14 +234,16 @@ docs/diagrams/   architecture and agent topology
 
 ### Test data
 
-Diagrams are generated from code, so the ground truth is exact rather than hand-labelled — which is what makes the hallucinated-edge rate measurable at all. `01_simple_api` is deliberately flawless, to catch a reviewer that invents findings to look useful. `02_flawed_webapp` carries one violation per pillar, stated on the node labels because a vision model can only report what the picture says.
+Two cases are generated from code, so the ground truth is exact rather than hand-labelled — which is what makes the hallucinated-edge rate measurable at all. `01_simple_api` is deliberately flawless, to catch a reviewer that invents findings to look useful. `02_flawed_webapp` carries one violation per pillar, stated on the node labels because a vision model can only report what the picture says.
+
+The third, `03_arcentry_3d`, is not generated by `generate.py`. It was exported from Arcentry, which built it from this project's own Terraform plan — so its ground truth comes from infrastructure code rather than from a drawing. It exists because the first two share one visual style, and a test set that only contains what the system handles well measures nothing.
 
 ---
 
 ## Known limitations
 
 - **Three pillars, not six.** The factory scales to all six; three were run to keep latency and cost in budget, and because ground truth exists for those three.
-- **Generated test diagrams look alike.** Same icons, same layout. A hand-drawn diagram from a customer deck is not represented, which is why a real diagram is kept as an additional case.
+- **Isometric diagrams do not work.** Measured, not assumed: `03_arcentry_3d` locates every box and identifies no service, with 98% of edges invented. The pipeline is usable on flat diagrams with horizontal labels and not beyond that.
 - **The human gate is mandatory, by design.** This is not a fire-and-forget tool and does not try to be.
 - **`REL12-BP06` is absent from the corpus** — it never appears as a heading in the source PDF, only as a cross-reference. Recorded in `KNOWN_ABSENT` so the completeness check stays strict.
 
