@@ -19,10 +19,7 @@ export BUCKET="${PREFIX}-${ACCOUNT_ID}"
 export TABLE="${PREFIX}-reviews"
 export ROLE="${PREFIX}-lambda"
 export POLICY="${PREFIX}-lambda-policy"
-export ECR_REPO="${PREFIX}-api"
 export FUNCTION="${PREFIX}-api"
-
-export IMAGE_URI="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:latest"
 
 # The index is built locally and shipped as an artefact. Rebuilding it inside
 # Lambda would mean downloading 669 pages of PDF and running 1,297 embedding

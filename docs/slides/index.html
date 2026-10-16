@@ -14,9 +14,9 @@
   Arrow keys or space to advance. Press P for presenter view (notes visible).
   Cmd-P prints every slide to PDF, one per page — that is the backup.
 
-  The demo slide embeds the live tool in an iframe. It only works when this
-  page is served from the same origin as the app, i.e. /slides on the API,
-  not opened as a local file.
+  The demo slide embeds the live tool in an iframe, and the image paths are
+  absolute. Both need this page served from the API at /slides — opening the
+  file directly from disk shows neither.
 -->
 <style>
   :root {
@@ -190,6 +190,13 @@
   <div class="notes">Don't explain the services yet. That comes after the measurements.</div>
 </section>
 
+<!-- ═══════════════════════════════ 3b · FLOW DIAGRAM ═══════════════════════ -->
+<section class="slide">
+  <div class="kicker">The whole thing on one page</div>
+  <figure><img src="/docs/diagrams/01_architecture_overview.svg" alt="How a review runs"></figure>
+  <div class="notes">Don't read it out. Point at the amber box and move on — the detail comes later.</div>
+</section>
+
 <!-- ═══════════════════════════════ 4 · MEASUREMENT 1 ═══════════════════════ -->
 <section class="slide">
   <div class="kicker">Measurement 1 — before any code was written</div>
@@ -353,6 +360,13 @@ search_pillars(pillar="reliability")← different metadata filter</pre>
   <div class="notes">If asked why not an LLM router: a reviewer that sometimes forgets a pillar is worse than one that always runs all three.</div>
 </section>
 
+<!-- ═══════════════════════════════ 9b · TOPOLOGY DIAGRAM ═══════════════════ -->
+<section class="slide">
+  <div class="kicker">Agent topology</div>
+  <figure><img src="/docs/diagrams/02_agent_topology.svg" alt="Agent topology"></figure>
+  <div class="notes">The verifier at the bottom is the part that is unusual. Everything above it is a normal fan-out.</div>
+</section>
+
 <!-- ═══════════════════════════════ 10 · DEMO ═══════════════════════════════ -->
 <section class="slide" data-demo>
   <div class="kicker">Demo — running live on AWS</div>
@@ -453,7 +467,7 @@ search_pillars(pillar="reliability")← different metadata filter</pre>
   <h2>Isometric diagrams break it completely.</h2>
   <div class="cols">
     <div>
-      <figure><img src="../../evaluation/datasets/03_arcentry_3d/diagram.png" alt="Isometric diagram"></figure>
+      <figure><img src="/evaluation/datasets/03_arcentry_3d/diagram.png" alt="Isometric diagram"></figure>
     </div>
     <div>
       <p class="hint">Exported from Arcentry, generated from this project's own Terraform plan.

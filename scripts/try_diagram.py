@@ -72,8 +72,8 @@ def main() -> int:
 
     graph = Graph(nodes=nodes, edges=edges, unreadable=unreadable)
 
-    print(f"\n  >> Compare this against the diagram. Every wrong arrow here is what")
-    print(f"     the human gate exists to catch. Measured rate: about half.")
+    print("\n  >> Compare this against the diagram. Every wrong arrow here is what")
+    print("     the human gate exists to catch. Measured rate: about half.")
 
     # ---- Step 3: retrieval -------------------------------------------------
     pillars = [Pillar(p) for p in args.pillar] if args.pillar else PILLARS
