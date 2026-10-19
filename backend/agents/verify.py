@@ -113,4 +113,4 @@ def verify(graph: Graph, findings: list[Finding]) -> tuple[list[Finding], list[F
         else:
             rejected.append(finding)
 
-    return kept, rejected
+    return kept, rejected               # which findings will be kept and which rejected

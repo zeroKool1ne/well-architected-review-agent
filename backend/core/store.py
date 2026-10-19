@@ -97,6 +97,8 @@ def save_findings(review_id: str, findings: list[dict], rejected: list[dict]) ->
         return
 
     record["status"] = REVIEWED
+    # dicts from f.model_dump(), not Finding objects — DynamoDB stores data,
+    # not Python objects, so pydantic flattens them first
     record["findings"] = findings
     record["rejected"] = rejected
     put(record)

@@ -46,8 +46,8 @@ FRONTEND = ROOT / "frontend" / "index.html"
 SLIDES = ROOT / "docs" / "slides" / "index.html"
 EVALUATION = ROOT / "evaluation" / "results" / "evaluation.json"
 
-# Bedrock accepts these image formats; anything else is rejected before a call
-# is made rather than failing deep inside the model invocation.
+# Bedrock Nova Lite only accepts these formats 
+# anything else will be rejected before function call
 FORMATS = {"png": "png", "jpg": "jpeg", "jpeg": "jpeg", "gif": "gif", "webp": "webp"}
 
 MAX_BYTES = 5 * 1024 * 1024
@@ -189,19 +189,31 @@ def post_review(review_id: str, body: ConfirmRequest) -> ReviewResult:
     result = run_review(body.graph)
     elapsed = time.perf_counter() - started
 
+    
     store.save_findings(
         review_id,
-        [f.model_dump() for f in result.findings],
-        [f.model_dump() for f in result.rejected],
+        # f.model_dump() => pydantic-object instanciated from class Finding in models.py
+        # a Finding carries six fields: pillar, issue, evidence, recommendation,
+        # citation and severity
+        # model_dump() translates object into data dynamoDB and json.dumps can read
+        [f.model_dump() for f in result.findings],          
+        [f.model_dump() for f in result.rejected],          
     )
 
+    # This is transparency, most tools only show results. 
+    # But how to I know this thing really put in the work:
+    # findings(with citation, best-practice-nr and page)
+    # rejected(what has been thrown away and why)
+    # pillars_with_nothing_to_say(which of the 3 agents didn't say anything)
     log.info(
         "reviewed review_id=%s findings=%d rejected=%d silent=%s in %.1fs",
         review_id, len(result.findings), len(result.rejected),
+        # translates pillar-enums into readable strings for CloudWatch-Log
+        # will go out through POST / review
         [str(p) for p in result.pillars_with_nothing_to_say], elapsed,
     )
 
-    return result
+    return result   # displayed in browser as JSON
 
 
 # Images the deck references. Mounted at the paths the slides resolve to, so

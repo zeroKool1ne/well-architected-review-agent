@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# S3 bucket for uploads and the index, plus the DynamoDB table holding review
+# S3 bucket for uploads & index, plus the DynamoDB table holding review
 # state between the two requests.
 #
 #     source deployment/infra/manual/00_variables.sh

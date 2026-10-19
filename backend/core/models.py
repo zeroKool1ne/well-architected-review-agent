@@ -77,7 +77,8 @@ class Citation(BaseModel):
     page: int
     pillar: Pillar
 
-
+# ´findings´ is a list of Finding-Objekten(not strings)
+# NOTE: finding.evidence is a list of node ids which contain the strings in Finding
 class Finding(BaseModel):
     pillar: Pillar
     issue: str = Field(description="what is wrong, in one or two sentences")
@@ -92,8 +93,8 @@ class Finding(BaseModel):
 
 class ReviewResult(BaseModel):
     graph: Graph
-    findings: list[Finding] = Field(default_factory=list)
-    rejected: list[Finding] = Field(
+    findings: list[Finding] = Field(default_factory=list)   # where the data lands from verify() 
+    rejected: list[Finding] = Field(                        # part of return model
         default_factory=list,
         description="findings the verification pass could not support from the graph",
     )

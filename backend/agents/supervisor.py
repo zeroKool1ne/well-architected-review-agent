@@ -122,6 +122,7 @@ def review(
 
     rejected: list[Finding] = []
     if verify_findings:
+        # verify() lives in verify.py and returns the split: what survives, what did not
         findings, rejected = verify(graph, findings)
 
     return ReviewResult(
