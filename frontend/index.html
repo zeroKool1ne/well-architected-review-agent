@@ -45,6 +45,19 @@
     font: inherit; padding: 6px 8px; border: 1px solid var(--line);
     border-radius: 6px; min-width: 110px;
   }
+  /* Table cells that are editable. Kept visually quiet until focused, so the
+     table still reads as a table rather than as a form. */
+  input.cell {
+    width: 100%; min-width: 0; padding: 4px 6px; border: 1px solid transparent;
+    border-radius: 5px; background: transparent; font-size: 14px;
+  }
+  input.cell:hover:not(:disabled) { border-color: var(--line); }
+  input.cell:focus { border-color: var(--accent); background: #fff; outline: none; }
+  input.cell:disabled { color: inherit; opacity: 1; }
+  input.cell.wide { font-size: 13.5px; }
+  /* A service the model could not identify. The reviewer is meant to fix it,
+     so it should be the first thing the eye lands on. */
+  input.cell.unknown { background: #fef2f2; border-color: #fecaca; color: var(--high); }
 
   table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 14px; }
   th { text-align: left; font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
@@ -91,8 +104,10 @@
     <h2>Check what the model read</h2>
     <p>
       The model reads labels reliably but <strong>invents connections</strong> — measured at
-      up to 50% hallucinated edges. Remove anything that is not in your diagram, add what is
-      missing. Nothing is reviewed until you confirm.
+      up to 98% hallucinated edges on unfamiliar diagram styles. Every field below is
+      editable: fix what was misread, remove what is not in your diagram, add what is
+      missing. Services marked <strong>Unknown</strong> could not be identified from the
+      icon and are worth correcting. Nothing is reviewed until you confirm.
     </p>
 
     <h2 style="margin-top:18px">Services</h2>
@@ -165,25 +180,56 @@ $("btn-extract").onclick = async () => {
 };
 
 // --- Step 2: the human corrects ----------------------------------------
+//
+// Services and labels are editable, not just removable. The model answers
+// "Unknown" whenever it cannot identify a service from its icon — on an
+// isometric diagram that was all ten of them — and a gate where the reviewer
+// can only delete turns a correctable reading into a lost one.
 function renderGate(unreadable) {
   const nodeRows = state.nodes.map((n, i) => `
     <tr class="${n.removed ? "removed" : ""}">
       <td><code>${esc(n.id)}</code></td>
-      <td>${esc(n.service)}</td>
-      <td>${esc(n.label)}</td>
+      <td><input type="text" class="cell ${n.service === "Unknown" ? "unknown" : ""}"
+                 data-node-service="${i}" value="${esc(n.service)}"
+                 ${n.removed ? "disabled" : ""}></td>
+      <td><input type="text" class="cell wide" data-node-label="${i}"
+                 value="${esc(n.label)}" ${n.removed ? "disabled" : ""}></td>
       <td class="drop"><button class="ghost" data-node="${i}">${n.removed ? "Undo" : "Remove"}</button></td>
     </tr>`).join("");
   $("nodes").querySelector("tbody").innerHTML = nodeRows;
 
+  const options = state.nodes.filter(n => !n.removed)
+    .map(n => `<option value="${esc(n.id)}">`).join("");
+
   const edgeRows = state.edges.map((e, i) => `
     <tr class="${e.removed ? "removed" : ""}">
-      <td><code>${esc(e.source)}</code></td>
-      <td><code>${esc(e.target)}</code></td>
-      <td>${esc(e.label || "")}</td>
+      <td><input type="text" class="cell" list="node-ids" data-edge-source="${i}"
+                 value="${esc(e.source)}" ${e.removed ? "disabled" : ""}></td>
+      <td><input type="text" class="cell" list="node-ids" data-edge-target="${i}"
+                 value="${esc(e.target)}" ${e.removed ? "disabled" : ""}></td>
+      <td><input type="text" class="cell" data-edge-label="${i}"
+                 value="${esc(e.label || "")}" placeholder="—" ${e.removed ? "disabled" : ""}></td>
       <td class="drop"><button class="ghost" data-edge="${i}">${e.removed ? "Undo" : "Remove"}</button></td>
     </tr>`).join("");
-  $("edges").querySelector("tbody").innerHTML = edgeRows
-    || '<tr><td colspan="4" style="color:var(--muted)">No connections reported.</td></tr>';
+  $("edges").querySelector("tbody").innerHTML =
+    `<datalist id="node-ids">${options}</datalist>` + (edgeRows
+      || '<tr><td colspan="4" style="color:var(--muted)">No connections reported.</td></tr>');
+
+  // Edits write straight into state on every keystroke. No save button: the
+  // confirm button already is one, and a second one invites half-saved graphs.
+  const bind = (attr, apply) => {
+    $("nodes").querySelectorAll(`[${attr}]`).forEach(el => {
+      el.oninput = () => apply(+el.getAttribute(attr), el.value);
+    });
+    $("edges").querySelectorAll(`[${attr}]`).forEach(el => {
+      el.oninput = () => apply(+el.getAttribute(attr), el.value);
+    });
+  };
+  bind("data-node-service", (i, v) => { state.nodes[i].service = v; });
+  bind("data-node-label", (i, v) => { state.nodes[i].label = v; });
+  bind("data-edge-source", (i, v) => { state.edges[i].source = v; });
+  bind("data-edge-target", (i, v) => { state.edges[i].target = v; });
+  bind("data-edge-label", (i, v) => { state.edges[i].label = v || null; });
 
   $("unreadable").innerHTML = unreadable.length
     ? `<div class="note">The model flagged as unclear: ${unreadable.map(esc).join("; ")}</div>`
