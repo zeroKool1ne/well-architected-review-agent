@@ -69,22 +69,10 @@ aws logs put-retention-policy \
   --log-group-name "/aws/lambda/${FUNCTION}" \
   --retention-in-days 14 >/dev/null 2>&1 || true
 
-echo "--- Function URL"
-if aws lambda get-function-url-config --function-name "${FUNCTION}" >/dev/null 2>&1; then
-  echo "    exists"
-else
-  aws lambda create-function-url-config \
-    --function-name "${FUNCTION}" \
-    --auth-type NONE >/dev/null
-  aws lambda add-permission \
-    --function-name "${FUNCTION}" \
-    --statement-id FunctionURLAllowPublicAccess \
-    --action lambda:InvokeFunctionUrl \
-    --principal "*" \
-    --function-url-auth-type NONE >/dev/null
-  echo "    created"
-fi
+# No function URL here. Public ones are refused at the organisation level in
+# this account — the resource policy is correct, the auth type is NONE, and
+# requests still come back 403 while a direct invoke returns 200. The HTTP API
+# in 50_apigateway.sh is what serves this function; run that next.
 
-URL=$(aws lambda get-function-url-config --function-name "${FUNCTION}" --query FunctionUrl --output text)
 echo
-echo "ready: ${URL}"
+echo "code updated. Run 50_apigateway.sh if the API does not exist yet."
