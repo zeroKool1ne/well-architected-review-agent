@@ -1,5 +1,9 @@
 -r requirements.txt
 
+# Reads .env locally. Lambda gets the same variables from its own
+# environment, so this is not in the deployment requirements.
+python-dotenv==1.1.1
+
 # Local server; on Lambda the app runs through Mangum instead.
 uvicorn[standard]==0.37.0
 

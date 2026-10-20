@@ -12,6 +12,16 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 
+# A local .env, when there is one. On Lambda there is not — the same variables
+# arrive through the function's environment, which is why nothing here is
+# overridden: whatever the platform already set wins.
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv(ROOT / ".env", override=False)
+except ImportError:  # pragma: no cover - not shipped to the function
+    pass
+
 
 @dataclass(frozen=True)
 class Settings:
